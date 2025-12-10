@@ -1,3 +1,5 @@
+import { BottomAdBanner, useInterstitialAd } from "@/components/ads";
+import { PromoBanner } from "@/components/premium";
 import { borderRadius, colors, spacing } from "@/constants/theme";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as Haptics from "expo-haptics";
@@ -427,6 +429,9 @@ function ResultCard({ section }: ResultCardProps) {
 // ============ COMPONENTE PRINCIPAL ============
 
 export default function ChurrascometroScreen() {
+  // Hook para anúncio intersticial
+  const { showAd } = useInterstitialAd();
+
   // Estado de entrada
   const [meatAdults, setMeatAdults] = useState(10);
   const [vegetarianAdults, setVegetarianAdults] = useState(2);
@@ -641,6 +646,8 @@ export default function ChurrascometroScreen() {
         message,
         title: "Lista de Churrasco",
       });
+      // Mostrar anúncio intersticial após compartilhar
+      showAd();
     } catch (error) {
       Alert.alert("Erro", "Não foi possível compartilhar a lista");
     }
@@ -694,7 +701,7 @@ export default function ChurrascometroScreen() {
               icon="beer"
             />
             <Counter
-              label="Bebedores de Refrigerante"
+              label="Bebem Refrigerante"
               value={sodaDrinkers}
               onChange={setSodaDrinkers}
               min={0}
@@ -771,13 +778,22 @@ export default function ChurrascometroScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Banner Promocional Premium (aparece após 30 segundos) */}
+        <PromoBanner showAfterSeconds={30} />
+
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Dica: As quantidades são estimativas. Ajuste conforme o apetite dos seus convidados! 🍖
           </Text>
         </View>
+
+        {/* Espaço para o banner de anúncio */}
+        <View style={styles.adSpace} />
       </ScrollView>
+
+      {/* Banner de Anúncio Fixo */}
+      <BottomAdBanner />
     </SafeAreaView>
   );
 }
@@ -1125,5 +1141,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+
+  // Ad space styles
+  adSpace: {
+    height: 60, // Espaço para o banner de anúncio
   },
 });
