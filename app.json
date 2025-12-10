@@ -23,8 +23,13 @@
         "backgroundColor": "#1A1A2E"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.churrascometro.app"
+      "package": "com.churrascometro.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "com.android.vending.BILLING"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -48,7 +53,17 @@
     "extra": {
       "adMobBannerUnitId": "ca-app-pub-3940256099942544/6300978111",
       "adMobInterstitialUnitId": "ca-app-pub-3940256099942544/1033173712",
-      "iapProductId": "churrascometro_premium_lifetime"
+      "iapProductId": "churrascometro_premium_lifetime",
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    },
+    "owner": "joaopedroc-araujo",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
     }
   }
 }

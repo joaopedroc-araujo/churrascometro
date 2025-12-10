@@ -1,1 +1,1 @@
-export { PromoBanner, PromoInlineBanner } from "./promo-banner";
+export { PromoBanner, PromoInlineBanner, useAutoUpgrade } from "./promo-banner";

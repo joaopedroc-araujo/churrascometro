@@ -1,8 +1,9 @@
 import { borderRadius, colors, spacing } from "@/constants/theme";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Tip {
@@ -120,10 +121,44 @@ export default function TipsScreen() {
           ))}
         </View>
 
+        {/* About Section */}
+        <View style={styles.aboutSection}>
+          <Text style={styles.aboutTitle}>Sobre o App</Text>
+
+          <View style={styles.aboutCard}>
+            <View style={styles.aboutRow}>
+              <FontAwesome name="mobile" size={20} color={colors.textSecondary} />
+              <Text style={styles.aboutText}>Churrascômetro</Text>
+              <Text style={styles.aboutVersion}>v{Constants.expoConfig?.version || "1.0.0"}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.aboutRow}
+              onPress={() => Linking.openURL("https://joaopedroc-araujo.github.io/churrascometro-privacy-policy/")}
+            >
+              <FontAwesome name="shield" size={20} color={colors.textSecondary} />
+              <Text style={styles.aboutText}>Política de Privacidade</Text>
+              <FontAwesome name="external-link" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.aboutRow}
+              onPress={() => Linking.openURL("mailto:costaaraujojoaopedro@gmail.com?subject=Churrascômetro - Contato")}
+            >
+              <FontAwesome name="envelope" size={20} color={colors.textSecondary} />
+              <Text style={styles.aboutText}>Contato</Text>
+              <FontAwesome name="external-link" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             🥩 Bom churrasco para você! 🔥
+          </Text>
+          <Text style={styles.footerCopyright}>
+            © 2025 Churrascômetro
           </Text>
         </View>
       </ScrollView>
@@ -196,10 +231,49 @@ const styles = StyleSheet.create({
   footer: {
     padding: spacing.lg,
     alignItems: "center",
+    marginBottom: spacing.xl,
   },
   footerText: {
     fontSize: 16,
     color: colors.text,
     textAlign: "center",
+  },
+  footerCopyright: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  aboutSection: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.lg,
+  },
+  aboutTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  aboutCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  aboutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.md,
+  },
+  aboutText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.text,
+  },
+  aboutVersion: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 });

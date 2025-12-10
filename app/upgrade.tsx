@@ -17,15 +17,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function UpgradeScreen() {
-  const { setPremium } = usePremium();
+  const { setPremium, restorePurchase } = usePremium();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const benefits = [
     { icon: "ban", text: "Sem anúncios para sempre" },
     { icon: "bolt", text: "App mais rápido e leve" },
     { icon: "heart", text: "Apoie o desenvolvedor" },
     { icon: "refresh", text: "Atualizações prioritárias" },
+    { icon: "shield", text: "Compra segura e verificada" },
   ];
 
   const handlePurchase = async () => {
@@ -34,14 +36,15 @@ export default function UpgradeScreen() {
     try {
       const result = await purchaseService.purchasePremium();
 
-      if (result.success) {
-        await setPremium(true);
+      if (result.success && result.purchaseData) {
+        // Salvar com dados completos da compra para validação segura
+        await setPremium(true, result.purchaseData);
         Alert.alert(
           "🎉 Parabéns!",
           "Você agora é Premium! Todos os anúncios foram removidos.",
           [{ text: "Oba!", onPress: () => router.back() }]
         );
-      } else {
+      } else if (result.error !== "Compra cancelada") {
         Alert.alert("Erro", result.error || "Não foi possível completar a compra");
       }
     } catch (error) {
@@ -52,16 +55,16 @@ export default function UpgradeScreen() {
   };
 
   const handleRestore = async () => {
-    setIsLoading(true);
+    setIsRestoring(true);
 
     try {
-      const result = await purchaseService.restorePurchases();
+      // Usar o método do contexto que já valida e salva de forma segura
+      const restored = await restorePurchase();
 
-      if (result.success) {
-        await setPremium(true);
+      if (restored) {
         Alert.alert(
           "✅ Restaurado!",
-          "Sua compra foi restaurada com sucesso.",
+          "Sua compra foi restaurada e verificada com sucesso.",
           [{ text: "OK", onPress: () => router.back() }]
         );
       } else {
@@ -73,7 +76,7 @@ export default function UpgradeScreen() {
     } catch (error) {
       Alert.alert("Erro", "Não foi possível restaurar a compra");
     } finally {
-      setIsLoading(false);
+      setIsRestoring(false);
     }
   };
 
@@ -125,9 +128,9 @@ export default function UpgradeScreen() {
 
         {/* Purchase Button */}
         <TouchableOpacity
-          style={[styles.purchaseButton, isLoading && styles.purchaseButtonDisabled]}
+          style={[styles.purchaseButton, (isLoading || isRestoring) && styles.purchaseButtonDisabled]}
           onPress={handlePurchase}
-          disabled={isLoading}
+          disabled={isLoading || isRestoring}
           activeOpacity={0.8}
         >
           {isLoading ? (
@@ -144,10 +147,20 @@ export default function UpgradeScreen() {
         <TouchableOpacity
           style={styles.restoreButton}
           onPress={handleRestore}
-          disabled={isLoading}
+          disabled={isLoading || isRestoring}
         >
-          <Text style={styles.restoreButtonText}>Restaurar compra anterior</Text>
+          {isRestoring ? (
+            <ActivityIndicator color={colors.textSecondary} size="small" />
+          ) : (
+            <Text style={styles.restoreButtonText}>Restaurar compra anterior</Text>
+          )}
         </TouchableOpacity>
+
+        {/* Security Badge */}
+        <View style={styles.securityBadge}>
+          <FontAwesome name="shield" size={14} color={colors.success} />
+          <Text style={styles.securityText}>Compra verificada pela Play Store</Text>
+        </View>
 
         {/* Footer */}
         <Text style={styles.footer}>
@@ -289,11 +302,25 @@ const styles = StyleSheet.create({
   restoreButton: {
     paddingVertical: spacing.md,
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
   restoreButtonText: {
     fontSize: 14,
     color: colors.textSecondary,
     textDecorationLine: "underline",
+  },
+  securityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  securityText: {
+    fontSize: 12,
+    color: colors.success,
   },
   footer: {
     fontSize: 12,

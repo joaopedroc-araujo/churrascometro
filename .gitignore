@@ -39,3 +39,13 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Google Play Service Account (NUNCA commitar!)
+google-service-account.json
+
+# EAS Build
+*.aab
+*.apk
+
+# Store assets (opcional - remova se quiser versionar)
+# store-assets/

@@ -1,5 +1,5 @@
 import { BottomAdBanner, useInterstitialAd } from "@/components/ads";
-import { PromoBanner } from "@/components/premium";
+import { PromoBanner, useAutoUpgrade } from "@/components/premium";
 import { borderRadius, colors, spacing } from "@/constants/theme";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as Haptics from "expo-haptics";
@@ -432,12 +432,15 @@ export default function ChurrascometroScreen() {
   // Hook para anúncio intersticial
   const { showAd } = useInterstitialAd();
 
+  // Hook para abrir tela de upgrade automaticamente (30s inicial, depois a cada 4 minutos)
+  useAutoUpgrade();
+
   // Estado de entrada
-  const [meatAdults, setMeatAdults] = useState(10);
-  const [vegetarianAdults, setVegetarianAdults] = useState(2);
-  const [children, setChildren] = useState(3);
-  const [beerDrinkers, setBeerDrinkers] = useState(8);
-  const [sodaDrinkers, setSodaDrinkers] = useState(6);
+  const [meatAdults, setMeatAdults] = useState(0);
+  const [vegetarianAdults, setVegetarianAdults] = useState(0);
+  const [children, setChildren] = useState(0);
+  const [beerDrinkers, setBeerDrinkers] = useState(0);
+  const [sodaDrinkers, setSodaDrinkers] = useState(0);
   const [duration, setDuration] = useState<"short" | "long">("short");
 
   // Estado para opções extras
@@ -664,6 +667,11 @@ export default function ChurrascometroScreen() {
           <Text style={styles.subtitle}>Calcule as quantidades ideais para o seu churrasco</Text>
         </View>
 
+        {/* Banner Premium no Topo */}
+        <View style={styles.section}>
+          <PromoBanner />
+        </View>
+
         {/* Seção de Entrada */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>👥 Convidados</Text>
@@ -777,9 +785,6 @@ export default function ChurrascometroScreen() {
             <Text style={styles.shareButtonText}>Compartilhar Lista</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Banner Promocional Premium (aparece após 30 segundos) */}
-        <PromoBanner showAfterSeconds={30} />
 
         {/* Footer */}
         <View style={styles.footer}>
