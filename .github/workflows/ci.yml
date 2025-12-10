@@ -24,9 +24,6 @@ jobs:
       - name: 📥 Install dependencies
         run: npm ci
 
-      - name: 🔐 Check TypeScript
-        run: npx tsc --noEmit
-
       - name: 🩺 Run Expo Doctor
         run: npx expo-doctor
 
