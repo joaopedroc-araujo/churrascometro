@@ -1,0 +1,80 @@
+name: 🚀 Release to Play Store
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      submit_to_store:
+        description: 'Submit to Play Store after build?'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  build-production:
+    name: 🏗️ Build Production AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 🔧 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run ESLint
+        run: npm run lint
+
+      - name: 🔐 Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: 🏗️ Build Production AAB
+        run: eas build --platform android --profile production --non-interactive --wait
+
+  submit-to-store:
+    name: 📤 Submit to Play Store
+    needs: build-production
+    runs-on: ubuntu-latest
+    # Executa se for release OU se workflow_dispatch com submit_to_store=true
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.submit_to_store == 'true')
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 🔧 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 📤 Create Google Service Account Key
+        run: echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}" | base64 -d > google-service-account.json
+
+      - name: 🚀 Submit to Play Store (Internal Track)
+        run: eas submit --platform android --latest --non-interactive
