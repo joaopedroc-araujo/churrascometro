@@ -12,12 +12,12 @@ export const PRODUCT_IDS = {
 // Preço do premium
 export const PREMIUM_PRICE = "R$ 9,99";
 
-// Verificar se IAP está disponível
-let IAPModule: typeof import("expo-in-app-purchases") | null = null;
+// Verificar se react-native-iap está disponível
+let RNIap: typeof import("react-native-iap") | null = null;
 let isIAPAvailable = false;
 
 try {
-  IAPModule = require("expo-in-app-purchases");
+  RNIap = require("react-native-iap");
   isIAPAvailable = true;
 } catch {
   isIAPAvailable = false;
@@ -45,13 +45,14 @@ export interface ValidationResult {
 
 class PurchaseService {
   private isConnected = false;
-  private purchaseListenerSet = false;
+  private purchaseUpdateSubscription: any = null;
+  private purchaseErrorSubscription: any = null;
   private pendingPurchaseResolve: ((result: PurchaseResult) => void) | null =
     null;
 
   // Conectar ao serviço de compras
   async connect(): Promise<boolean> {
-    if (!isIAPAvailable || !IAPModule) {
+    if (!isIAPAvailable || !RNIap) {
       console.log("[IAP] Módulo não disponível");
       return false;
     }
@@ -61,8 +62,9 @@ class PurchaseService {
     }
 
     try {
-      await IAPModule.connectAsync();
+      await RNIap.initConnection();
       this.isConnected = true;
+      this.setupListeners();
       console.log("[IAP] Conectado com sucesso");
       return true;
     } catch (error) {
@@ -71,95 +73,90 @@ class PurchaseService {
     }
   }
 
+  // Configurar listeners de compras
+  private setupListeners(): void {
+    if (!RNIap || this.purchaseUpdateSubscription) return;
+
+    this.purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(
+      async (purchase) => {
+        console.log("[IAP] Compra atualizada:", purchase);
+
+        try {
+          // Finalizar transação (acknowledge)
+          if (Platform.OS === "android" && purchase.purchaseToken) {
+            await RNIap!.acknowledgePurchaseAndroid(purchase.purchaseToken);
+          } else {
+            await RNIap!.finishTransaction({ purchase });
+          }
+
+          const purchaseData: PurchaseData = {
+            productId: purchase.productId,
+            purchaseToken: purchase.purchaseToken || "",
+            transactionId: purchase.transactionId || "",
+            purchaseTime: new Date(
+              purchase.transactionDate || Date.now()
+            ).getTime(),
+            acknowledged: true,
+          };
+
+          if (this.pendingPurchaseResolve) {
+            this.pendingPurchaseResolve({ success: true, purchaseData });
+            this.pendingPurchaseResolve = null;
+          }
+        } catch (error) {
+          console.error("[IAP] Erro ao finalizar transação:", error);
+        }
+      }
+    );
+
+    this.purchaseErrorSubscription = RNIap.purchaseErrorListener((error) => {
+      console.error("[IAP] Erro na compra:", error);
+
+      if (this.pendingPurchaseResolve) {
+        const isCancelled = String(error.code) === "E_USER_CANCELLED";
+        this.pendingPurchaseResolve({
+          success: false,
+          error: isCancelled ? "Compra cancelada" : error.message,
+        });
+        this.pendingPurchaseResolve = null;
+      }
+    });
+  }
+
   // Desconectar
   async disconnect(): Promise<void> {
-    if (!isIAPAvailable || !IAPModule || !this.isConnected) return;
+    if (!isIAPAvailable || !RNIap || !this.isConnected) return;
 
     try {
-      await IAPModule.disconnectAsync();
+      if (this.purchaseUpdateSubscription) {
+        this.purchaseUpdateSubscription.remove();
+        this.purchaseUpdateSubscription = null;
+      }
+      if (this.purchaseErrorSubscription) {
+        this.purchaseErrorSubscription.remove();
+        this.purchaseErrorSubscription = null;
+      }
+      await RNIap.endConnection();
       this.isConnected = false;
-      this.purchaseListenerSet = false;
     } catch (error) {
       console.error("[IAP] Erro ao desconectar:", error);
     }
   }
 
-  // Configurar listener de compras
-  private setupPurchaseListener(): void {
-    if (!IAPModule || this.purchaseListenerSet) return;
-
-    IAPModule.setPurchaseListener(({ responseCode, results, errorCode }) => {
-      console.log("[IAP] Purchase listener:", {
-        responseCode,
-        errorCode,
-        results,
-      });
-
-      if (this.pendingPurchaseResolve) {
-        if (
-          responseCode === IAPModule!.IAPResponseCode.OK &&
-          results &&
-          results.length > 0
-        ) {
-          const purchase = results.find(
-            (p) => p.productId === PRODUCT_IDS.PREMIUM_LIFETIME
-          );
-
-          if (purchase) {
-            // Finalizar transação (acknowledge)
-            if (!purchase.acknowledged) {
-              IAPModule!
-                .finishTransactionAsync(purchase, true)
-                .catch((err) => console.error("[IAP] Erro ao finalizar:", err));
-            }
-
-            const purchaseData: PurchaseData = {
-              productId: purchase.productId,
-              purchaseToken: purchase.purchaseToken || "",
-              transactionId: purchase.orderId || "",
-              purchaseTime: purchase.purchaseTime || Date.now(),
-              acknowledged: true,
-            };
-
-            this.pendingPurchaseResolve({ success: true, purchaseData });
-          } else {
-            this.pendingPurchaseResolve({
-              success: false,
-              error: "Produto não encontrado",
-            });
-          }
-        } else if (responseCode === IAPModule!.IAPResponseCode.USER_CANCELED) {
-          this.pendingPurchaseResolve({
-            success: false,
-            error: "Compra cancelada",
-          });
-        } else {
-          this.pendingPurchaseResolve({
-            success: false,
-            error: `Erro na compra (código: ${errorCode || responseCode})`,
-          });
-        }
-
-        this.pendingPurchaseResolve = null;
-      }
-    });
-
-    this.purchaseListenerSet = true;
-  }
-
   // Obter produtos disponíveis
   async getProducts(): Promise<any[]> {
-    if (!isIAPAvailable || !IAPModule) return [];
+    if (!isIAPAvailable || !RNIap) return [];
 
     try {
       if (!this.isConnected) {
         await this.connect();
       }
 
-      const { results } = await IAPModule.getProductsAsync([
-        PRODUCT_IDS.PREMIUM_LIFETIME,
-      ]);
-      return results || [];
+      // Nova API do react-native-iap v13+ usa fetchProducts
+      const products = await RNIap.fetchProducts({
+        skus: [PRODUCT_IDS.PREMIUM_LIFETIME],
+      });
+      return products || [];
     } catch (error) {
       console.error("[IAP] Erro ao obter produtos:", error);
       return [];
@@ -168,7 +165,7 @@ class PurchaseService {
 
   // Realizar compra
   async purchasePremium(): Promise<PurchaseResult> {
-    if (!isIAPAvailable || !IAPModule) {
+    if (!isIAPAvailable || !RNIap) {
       // Em desenvolvimento, simular compra com dados fake
       if (__DEV__) {
         console.log("[IAP] Simulando compra em dev");
@@ -191,8 +188,6 @@ class PurchaseService {
         await this.connect();
       }
 
-      this.setupPurchaseListener();
-
       // Criar promise para aguardar resultado do listener
       const purchasePromise = new Promise<PurchaseResult>((resolve) => {
         this.pendingPurchaseResolve = resolve;
@@ -206,8 +201,14 @@ class PurchaseService {
         }, 120000);
       });
 
-      // Iniciar compra
-      await IAPModule.purchaseItemAsync(PRODUCT_IDS.PREMIUM_LIFETIME);
+      // Iniciar compra - Nova API react-native-iap v13+
+      await RNIap.requestPurchase({
+        request: {
+          google: { skus: [PRODUCT_IDS.PREMIUM_LIFETIME] },
+          apple: { sku: PRODUCT_IDS.PREMIUM_LIFETIME },
+        },
+        type: "in-app",
+      });
 
       return purchasePromise;
     } catch (error: any) {
@@ -222,7 +223,7 @@ class PurchaseService {
 
   // Validar compra na Play Store (verifica se a compra ainda é válida)
   async validatePurchase(): Promise<ValidationResult> {
-    if (!isIAPAvailable || !IAPModule) {
+    if (!isIAPAvailable || !RNIap) {
       console.log("[IAP] Validação não disponível - módulo não carregado");
       return { isValid: false };
     }
@@ -236,16 +237,16 @@ class PurchaseService {
         }
       }
 
-      // Buscar histórico de compras direto da Play Store
-      const { results } = await IAPModule.getPurchaseHistoryAsync();
+      // Buscar compras disponíveis (não consumidas)
+      const purchases = await RNIap.getAvailablePurchases();
 
-      if (!results || results.length === 0) {
-        console.log("[IAP] Nenhuma compra encontrada no histórico");
+      if (!purchases || purchases.length === 0) {
+        console.log("[IAP] Nenhuma compra encontrada");
         return { isValid: false };
       }
 
       // Procurar compra do premium
-      const premiumPurchase = results.find(
+      const premiumPurchase = purchases.find(
         (p) => p.productId === PRODUCT_IDS.PREMIUM_LIFETIME
       );
 
@@ -261,9 +262,11 @@ class PurchaseService {
         purchaseData: {
           productId: premiumPurchase.productId,
           purchaseToken: premiumPurchase.purchaseToken || "",
-          transactionId: premiumPurchase.orderId || "",
-          purchaseTime: premiumPurchase.purchaseTime || 0,
-          acknowledged: premiumPurchase.acknowledged || false,
+          transactionId: premiumPurchase.transactionId || "",
+          purchaseTime: new Date(
+            premiumPurchase.transactionDate || 0
+          ).getTime(),
+          acknowledged: true,
         },
       };
     } catch (error) {
@@ -274,7 +277,7 @@ class PurchaseService {
 
   // Restaurar compras anteriores
   async restorePurchases(): Promise<PurchaseResult> {
-    if (!isIAPAvailable || !IAPModule) {
+    if (!isIAPAvailable || !RNIap) {
       return { success: false, error: "Restauração não disponível" };
     }
 
@@ -283,13 +286,13 @@ class PurchaseService {
         await this.connect();
       }
 
-      const { results } = await IAPModule.getPurchaseHistoryAsync();
+      const purchases = await RNIap.getAvailablePurchases();
 
-      if (!results || results.length === 0) {
+      if (!purchases || purchases.length === 0) {
         return { success: false, error: "Nenhuma compra encontrada" };
       }
 
-      const premiumPurchase = results.find(
+      const premiumPurchase = purchases.find(
         (purchase) => purchase.productId === PRODUCT_IDS.PREMIUM_LIFETIME
       );
 
@@ -297,9 +300,11 @@ class PurchaseService {
         const purchaseData: PurchaseData = {
           productId: premiumPurchase.productId,
           purchaseToken: premiumPurchase.purchaseToken || "",
-          transactionId: premiumPurchase.orderId || "",
-          purchaseTime: premiumPurchase.purchaseTime || 0,
-          acknowledged: premiumPurchase.acknowledged || false,
+          transactionId: premiumPurchase.transactionId || "",
+          purchaseTime: new Date(
+            premiumPurchase.transactionDate || 0
+          ).getTime(),
+          acknowledged: true,
         };
 
         return { success: true, purchaseData };

@@ -50,9 +50,14 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function hideSplash() {
+      if (loaded) {
+        // Aguardar um tempo mínimo para a splash aparecer
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await SplashScreen.hideAsync();
+      }
     }
+    hideSplash();
   }, [loaded]);
 
   if (!loaded) {

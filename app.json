@@ -18,6 +18,11 @@
       "bundleIdentifier": "com.churrascometro.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1A1A2E"
       }
     },
     "android": {
@@ -32,7 +37,12 @@
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
         "com.android.vending.BILLING"
-      ]
+      ],
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1A1A2E"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -43,7 +53,7 @@
       "expo-router",
       "expo-splash-screen",
       [
-        "./plugins/with-google-mobile-ads",
+        "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-2580199539229846~8488834535",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
