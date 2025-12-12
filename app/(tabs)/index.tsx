@@ -126,7 +126,7 @@ function formatCurrency(value: number): string {
 }
 
 function calculateItemPrice(quantity: number, format: QuantityFormat, pricePerUnit?: number): number {
-  if (!pricePerUnit) return 0;
+  if (!pricePerUnit) { return 0; }
 
   switch (format) {
     case "g":
@@ -153,17 +153,20 @@ function formatQuantity(quantity: number, format: QuantityFormat): string {
       return `${roundUp(quantity)} g`;
     case "kg":
       return `${quantity.toFixed(1)} kg`;
-    case "unit":
+    case "unit": {
       const units = roundUp(quantity);
       return `${units} ${units === 1 ? "un" : "un"}`;
+    }
     case "l":
       return `${quantity.toFixed(1)} L`;
-    case "can":
+    case "can": {
       const cans = roundUp(quantity);
       return `${cans} ${cans === 1 ? "lata" : "latas"}`;
-    case "bag":
+    }
+    case "bag": {
       const bags = roundUp(quantity);
       return `${bags} ${bags === 1 ? "saco" : "sacos"}`;
+    }
     default:
       return `${roundUp(quantity)}`;
   }
@@ -526,7 +529,7 @@ export default function ChurrascometroScreen() {
   const [duration, setDuration] = useState<"short" | "long">("short");
 
   // Estado para preços customizados
-  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+  const [_customPrices, setCustomPrices] = useState<Record<string, number>>({});
 
   // Estado para perfis customizados
   const [customProfiles, setCustomProfiles] = useState<ChurrascoProfile[]>([]);

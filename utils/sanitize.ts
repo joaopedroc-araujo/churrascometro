@@ -6,11 +6,14 @@
  * Sanitiza uma string removendo caracteres perigosos e limitando tamanho
  */
 export function sanitizeString(input: string, maxLength = 100): string {
-  return input
-    .trim()
-    .replace(/[<>]/g, "") // Remove tags HTML
-    .replace(/[\x00-\x1F\x7F]/g, "") // Remove caracteres de controle
-    .slice(0, maxLength);
+  return (
+    input
+      .trim()
+      .replace(/[<>]/g, "") // Remove tags HTML
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x1F\x7F]/g, "") // Remove caracteres de controle
+      .slice(0, maxLength)
+  );
 }
 
 /**
@@ -21,8 +24,12 @@ export function sanitizePrice(input: string, maxValue = 99999): number {
   const cleaned = input.replace(/[^0-9,.]/g, "").replace(",", ".");
   const parsed = parseFloat(cleaned);
 
-  if (isNaN(parsed) || parsed < 0) return 0;
-  if (parsed > maxValue) return maxValue;
+  if (isNaN(parsed) || parsed < 0) {
+    return 0;
+  }
+  if (parsed > maxValue) {
+    return maxValue;
+  }
 
   return Math.round(parsed * 100) / 100; // 2 casas decimais
 }
@@ -31,7 +38,9 @@ export function sanitizePrice(input: string, maxValue = 99999): number {
  * Sanitiza e valida uma quantidade inteira
  */
 export function sanitizeQuantity(input: number, min = 0, max = 999): number {
-  if (isNaN(input)) return min;
+  if (isNaN(input)) {
+    return min;
+  }
   return Math.max(min, Math.min(max, Math.floor(input)));
 }
 

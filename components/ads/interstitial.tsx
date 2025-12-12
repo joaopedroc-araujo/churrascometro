@@ -105,10 +105,10 @@ export function useInterstitialAd() {
       return true;
     }
     return false;;
-  }, [isLoaded]);
+  }, [isLoaded, isPremium]);
 
   const reloadAd = useCallback(() => {
-    if (!isAdsAvailable || !interstitial) return;
+    if (!isAdsAvailable || !interstitial) { return; }
     setIsLoaded(false);
     setIsClosed(false);
     interstitial.load();

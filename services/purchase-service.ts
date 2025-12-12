@@ -75,7 +75,7 @@ class PurchaseService {
 
   // Configurar listeners de compras
   private setupListeners(): void {
-    if (!RNIap || this.purchaseUpdateSubscription) return;
+    if (!RNIap || this.purchaseUpdateSubscription) {return;}
 
     this.purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(
       async (purchase) => {
@@ -125,7 +125,7 @@ class PurchaseService {
 
   // Desconectar
   async disconnect(): Promise<void> {
-    if (!isIAPAvailable || !RNIap || !this.isConnected) return;
+    if (!isIAPAvailable || !RNIap || !this.isConnected) {return;}
 
     try {
       if (this.purchaseUpdateSubscription) {
@@ -145,7 +145,7 @@ class PurchaseService {
 
   // Obter produtos disponíveis
   async getProducts(): Promise<any[]> {
-    if (!isIAPAvailable || !RNIap) return [];
+    if (!isIAPAvailable || !RNIap) {return [];}
 
     try {
       if (!this.isConnected) {

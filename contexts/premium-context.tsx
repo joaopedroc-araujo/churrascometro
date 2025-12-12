@@ -1,7 +1,7 @@
 import { PurchaseData, purchaseService } from "@/services/purchase-service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 // Chaves de storage
 const PREMIUM_DATA_KEY = "@churrascometro:premium_data";
@@ -46,12 +46,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [purchaseData, setPurchaseData] = useState<PurchaseData | null>(null);
 
-  // Carregar e validar status premium ao iniciar
-  useEffect(() => {
-    loadAndValidatePremiumStatus();
-  }, []);
-
-  const loadAndValidatePremiumStatus = async () => {
+  const loadAndValidatePremiumStatus = useCallback(async () => {
     try {
       console.log("[Premium] Carregando status...");
 
@@ -107,7 +102,12 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Carregar e validar status premium ao iniciar
+  useEffect(() => {
+    loadAndValidatePremiumStatus();
+  }, [loadAndValidatePremiumStatus]);
 
   const clearPremiumData = async () => {
     try {

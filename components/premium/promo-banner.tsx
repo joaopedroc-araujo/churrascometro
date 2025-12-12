@@ -21,11 +21,11 @@ export function useAutoUpgrade({
   const { isPremium, isLoading } = usePremium();
   const router = useRouter();
   const hasShownInitial = useRef(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Aguardar carregar o status premium
-    if (isLoading) return;
+    if (isLoading) { return; }
 
     // Se já é premium, não mostrar
     if (isPremium) {
@@ -38,9 +38,9 @@ export function useAutoUpgrade({
     }
 
     // Se desativado
-    if (initialDelaySeconds <= 0) return;
+    if (initialDelaySeconds <= 0) { return; }
 
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     // Primeira exibição após o delay inicial
     if (!hasShownInitial.current) {
@@ -58,7 +58,7 @@ export function useAutoUpgrade({
     }
 
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timer) { clearTimeout(timer); }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -72,7 +72,7 @@ export function PromoBanner() {
   const { isPremium } = usePremium();
   const router = useRouter();
 
-  if (isPremium) return null;
+  if (isPremium) { return null; }
 
   return (
     <TouchableOpacity
