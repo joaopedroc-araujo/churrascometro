@@ -8,14 +8,10 @@ export const alerts = {
    * Confirmação antes de excluir um item
    */
   confirmDelete: (itemName: string, onConfirm: () => void) => {
-    Alert.alert(
-      "Confirmar Exclusão",
-      `Tem certeza que deseja excluir "${itemName}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Excluir", style: "destructive", onPress: onConfirm },
-      ]
-    );
+    Alert.alert("Confirmar Exclusão", `Tem certeza que deseja excluir "${itemName}"?`, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Excluir", style: "destructive", onPress: onConfirm },
+    ]);
   },
 
   /**

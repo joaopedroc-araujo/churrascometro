@@ -59,23 +59,17 @@ export function useInterstitialAd() {
     }
 
     // Listener para quando o anúncio carregar
-    const loadedListener = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        setIsLoaded(true);
-      }
-    );
+    const loadedListener = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      setIsLoaded(true);
+    });
 
     // Listener para quando o anúncio fechar
-    const closedListener = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        setIsClosed(true);
-        setIsLoaded(false);
-        // Recarregar para próxima exibição
-        interstitial.load();
-      }
-    );
+    const closedListener = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      setIsClosed(true);
+      setIsLoaded(false);
+      // Recarregar para próxima exibição
+      interstitial.load();
+    });
 
     // Carregar o anúncio
     interstitial.load();
@@ -104,11 +98,13 @@ export function useInterstitialAd() {
       interstitial.show();
       return true;
     }
-    return false;;
+    return false;
   }, [isLoaded, isPremium]);
 
   const reloadAd = useCallback(() => {
-    if (!isAdsAvailable || !interstitial) { return; }
+    if (!isAdsAvailable || !interstitial) {
+      return;
+    }
     setIsLoaded(false);
     setIsClosed(false);
     interstitial.load();

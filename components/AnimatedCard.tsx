@@ -11,11 +11,7 @@ interface AnimatedCardProps {
 /**
  * Card com animação de entrada (fade + slide)
  */
-export function AnimatedCard({
-  children,
-  delay = 0,
-  style,
-}: AnimatedCardProps) {
+export function AnimatedCard({ children, delay = 0, style }: AnimatedCardProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 

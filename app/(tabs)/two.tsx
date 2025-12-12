@@ -109,9 +109,7 @@ export default function TipsScreen() {
         <View style={styles.header}>
           <FontAwesome name="lightbulb-o" size={40} color={colors.secondary} />
           <Text style={styles.title}>Dicas de Churrasco</Text>
-          <Text style={styles.subtitle}>
-            Aprenda os segredos para um churrasco perfeito
-          </Text>
+          <Text style={styles.subtitle}>Aprenda os segredos para um churrasco perfeito</Text>
         </View>
 
         {/* Tips List */}
@@ -134,7 +132,11 @@ export default function TipsScreen() {
 
             <TouchableOpacity
               style={styles.aboutRow}
-              onPress={() => Linking.openURL("https://joaopedroc-araujo.github.io/churrascometro-privacy-policy/")}
+              onPress={() =>
+                Linking.openURL(
+                  "https://joaopedroc-araujo.github.io/churrascometro-privacy-policy/"
+                )
+              }
             >
               <FontAwesome name="shield" size={20} color={colors.textSecondary} />
               <Text style={styles.aboutText}>Política de Privacidade</Text>
@@ -143,7 +145,11 @@ export default function TipsScreen() {
 
             <TouchableOpacity
               style={styles.aboutRow}
-              onPress={() => Linking.openURL("mailto:costaaraujojoaopedro@gmail.com?subject=Churrascômetro - Contato")}
+              onPress={() =>
+                Linking.openURL(
+                  "mailto:costaaraujojoaopedro@gmail.com?subject=Churrascômetro - Contato"
+                )
+              }
             >
               <FontAwesome name="envelope" size={20} color={colors.textSecondary} />
               <Text style={styles.aboutText}>Contato</Text>
@@ -154,12 +160,8 @@ export default function TipsScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            🥩 Bom churrasco para você! 🔥
-          </Text>
-          <Text style={styles.footerCopyright}>
-            © 2025 Churrascômetro
-          </Text>
+          <Text style={styles.footerText}>🥩 Bom churrasco para você! 🔥</Text>
+          <Text style={styles.footerCopyright}>© 2025 Churrascômetro</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

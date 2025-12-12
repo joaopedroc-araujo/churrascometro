@@ -44,15 +44,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <View style={styles.container}>
-          <FontAwesome
-            name="exclamation-triangle"
-            size={60}
-            color={colors.warning}
-          />
+          <FontAwesome name="exclamation-triangle" size={60} color={colors.warning} />
           <Text style={styles.title}>Ops! Algo deu errado</Text>
-          <Text style={styles.message}>
-            {this.state.error?.message || "Erro desconhecido"}
-          </Text>
+          <Text style={styles.message}>{this.state.error?.message || "Erro desconhecido"}</Text>
           <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
             <FontAwesome name="refresh" size={18} color="#FFF" />
             <Text style={styles.buttonText}>Tentar Novamente</Text>

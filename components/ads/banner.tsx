@@ -22,7 +22,9 @@ try {
 
 // IDs de teste por plataforma
 const getTestBannerId = () => {
-  if (!TestIds) {return "";}
+  if (!TestIds) {
+    return "";
+  }
   return Platform.select({
     android: TestIds.ADAPTIVE_BANNER,
     ios: TestIds.ADAPTIVE_BANNER,
@@ -31,7 +33,9 @@ const getTestBannerId = () => {
 };
 
 const getAdUnitId = (): string => {
-  if (!isAdsAvailable) {return "";}
+  if (!isAdsAvailable) {
+    return "";
+  }
 
   // Em desenvolvimento, usar IDs de teste
   if (__DEV__) {

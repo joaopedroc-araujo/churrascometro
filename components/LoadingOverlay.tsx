@@ -10,10 +10,7 @@ interface LoadingOverlayProps {
 /**
  * Overlay de carregamento para operações assíncronas
  */
-export function LoadingOverlay({
-  visible,
-  message = "Carregando...",
-}: LoadingOverlayProps) {
+export function LoadingOverlay({ visible, message = "Carregando..." }: LoadingOverlayProps) {
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View style={styles.container}>

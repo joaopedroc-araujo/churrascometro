@@ -1,7 +1,14 @@
 import { PurchaseData, purchaseService } from "@/services/purchase-service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 // Chaves de storage
 const PREMIUM_DATA_KEY = "@churrascometro:premium_data";
@@ -28,10 +35,7 @@ interface PremiumProviderProps {
 // Gerar hash de verificação para detectar manipulação
 async function generateHash(data: string): Promise<string> {
   const dataWithSalt = `${HASH_SALT}:${data}`;
-  const hash = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    dataWithSalt
-  );
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, dataWithSalt);
   return hash;
 }
 

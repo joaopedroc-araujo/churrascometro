@@ -25,7 +25,9 @@ export function useAutoUpgrade({
 
   useEffect(() => {
     // Aguardar carregar o status premium
-    if (isLoading) { return; }
+    if (isLoading) {
+      return;
+    }
 
     // Se já é premium, não mostrar
     if (isPremium) {
@@ -38,7 +40,9 @@ export function useAutoUpgrade({
     }
 
     // Se desativado
-    if (initialDelaySeconds <= 0) { return; }
+    if (initialDelaySeconds <= 0) {
+      return;
+    }
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -58,7 +62,9 @@ export function useAutoUpgrade({
     }
 
     return () => {
-      if (timer) { clearTimeout(timer); }
+      if (timer) {
+        clearTimeout(timer);
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -72,7 +78,9 @@ export function PromoBanner() {
   const { isPremium } = usePremium();
   const router = useRouter();
 
-  if (isPremium) { return null; }
+  if (isPremium) {
+    return null;
+  }
 
   return (
     <TouchableOpacity
@@ -86,9 +94,7 @@ export function PromoBanner() {
         </View>
         <View style={styles.textContainer}>
           <Text style={styles.title}>🔥 Remova os Anúncios!</Text>
-          <Text style={styles.subtitle}>
-            Apenas {PREMIUM_PRICE} • Para sempre
-          </Text>
+          <Text style={styles.subtitle}>Apenas {PREMIUM_PRICE} • Para sempre</Text>
         </View>
         <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
       </View>

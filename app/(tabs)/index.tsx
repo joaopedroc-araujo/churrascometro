@@ -1,7 +1,16 @@
 import { BottomAdBanner, useInterstitialAd } from "@/components/ads";
 import { PromoBanner, useAutoUpgrade } from "@/components/premium";
 import { borderRadius, colors, spacing } from "@/constants/theme";
-import { CHURRASCO_PROFILES, ChurrascoProfile, clearChecklist, getCustomPrices, getCustomProfiles, LastCalculation, saveCustomProfile, saveLastCalculation } from "@/services/storage-service";
+import {
+  CHURRASCO_PROFILES,
+  ChurrascoProfile,
+  clearChecklist,
+  getCustomPrices,
+  getCustomProfiles,
+  LastCalculation,
+  saveCustomProfile,
+  saveLastCalculation,
+} from "@/services/storage-service";
 import { alerts, haptics } from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
@@ -56,39 +65,102 @@ interface CalculationResult {
 // ============ DEFINIÇÕES DE ITENS ============
 
 const MEAT_ITEMS: ItemDefinition[] = [
-  { key: "picanha", label: "Picanha", perAdult: 200, perChild: 100, format: "g", pricePerUnit: 89.90 },
-  { key: "costela", label: "Costela", perAdult: 200, perChild: 100, format: "g", pricePerUnit: 34.90 },
-  { key: "linguica", label: "Linguiça", perAdult: 100, perChild: 50, format: "g", pricePerUnit: 24.90 },
-  { key: "frango", label: "Coração/Frango", perAdult: 100, perChild: 50, format: "g", pricePerUnit: 29.90 },
-  { key: "maminha", label: "Maminha", perAdult: 150, perChild: 80, format: "g", pricePerUnit: 54.90 },
-  { key: "fraldinha", label: "Fraldinha", perAdult: 150, perChild: 80, format: "g", pricePerUnit: 49.90 },
+  {
+    key: "picanha",
+    label: "Picanha",
+    perAdult: 200,
+    perChild: 100,
+    format: "g",
+    pricePerUnit: 89.9,
+  },
+  {
+    key: "costela",
+    label: "Costela",
+    perAdult: 200,
+    perChild: 100,
+    format: "g",
+    pricePerUnit: 34.9,
+  },
+  {
+    key: "linguica",
+    label: "Linguiça",
+    perAdult: 100,
+    perChild: 50,
+    format: "g",
+    pricePerUnit: 24.9,
+  },
+  {
+    key: "frango",
+    label: "Coração/Frango",
+    perAdult: 100,
+    perChild: 50,
+    format: "g",
+    pricePerUnit: 29.9,
+  },
+  {
+    key: "maminha",
+    label: "Maminha",
+    perAdult: 150,
+    perChild: 80,
+    format: "g",
+    pricePerUnit: 54.9,
+  },
+  {
+    key: "fraldinha",
+    label: "Fraldinha",
+    perAdult: 150,
+    perChild: 80,
+    format: "g",
+    pricePerUnit: 49.9,
+  },
 ];
 
 const VEGETARIAN_ITEMS: ItemDefinition[] = [
-  { key: "queijo_coalho", label: "Queijo Coalho", perAdult: 150, format: "g", pricePerUnit: 45.90 },
-  { key: "abacaxi", label: "Abacaxi", perAdult: 0.25, format: "unit", pricePerUnit: 6.00 },
-  { key: "cogumelos", label: "Cogumelos", perAdult: 100, format: "g", pricePerUnit: 39.90 },
-  { key: "legumes", label: "Legumes Grelhados", perAdult: 150, format: "g", pricePerUnit: 12.90 },
+  { key: "queijo_coalho", label: "Queijo Coalho", perAdult: 150, format: "g", pricePerUnit: 45.9 },
+  { key: "abacaxi", label: "Abacaxi", perAdult: 0.25, format: "unit", pricePerUnit: 6.0 },
+  { key: "cogumelos", label: "Cogumelos", perAdult: 100, format: "g", pricePerUnit: 39.9 },
+  { key: "legumes", label: "Legumes Grelhados", perAdult: 150, format: "g", pricePerUnit: 12.9 },
 ];
 
 const SIDE_ITEMS: ItemDefinition[] = [
-  { key: "arroz", label: "Arroz", perAdult: 80, perChild: 50, format: "g", pricePerUnit: 6.90 },
-  { key: "farofa", label: "Farofa", perAdult: 50, perChild: 30, format: "g", pricePerUnit: 8.90 },
-  { key: "vinagrete", label: "Vinagrete", perAdult: 50, perChild: 25, format: "g", pricePerUnit: 15.00 },
-  { key: "pao_alho", label: "Pão de Alho", perAdult: 2, perChild: 1, format: "unit", pricePerUnit: 2.50 },
+  { key: "arroz", label: "Arroz", perAdult: 80, perChild: 50, format: "g", pricePerUnit: 6.9 },
+  { key: "farofa", label: "Farofa", perAdult: 50, perChild: 30, format: "g", pricePerUnit: 8.9 },
+  {
+    key: "vinagrete",
+    label: "Vinagrete",
+    perAdult: 50,
+    perChild: 25,
+    format: "g",
+    pricePerUnit: 15.0,
+  },
+  {
+    key: "pao_alho",
+    label: "Pão de Alho",
+    perAdult: 2,
+    perChild: 1,
+    format: "unit",
+    pricePerUnit: 2.5,
+  },
 ];
 
 const DRINK_ITEMS: ItemDefinition[] = [
-  { key: "cerveja", label: "Cerveja", perAdult: 4, format: "can", pricePerUnit: 3.50 },
-  { key: "refrigerante", label: "Refrigerante", perAdult: 0.5, perChild: 0.3, format: "l", pricePerUnit: 8.00 },
-  { key: "agua", label: "Água", perAdult: 0.5, perChild: 0.3, format: "l", pricePerUnit: 3.00 },
-  { key: "suco", label: "Suco", perAdult: 0.3, perChild: 0.4, format: "l", pricePerUnit: 12.00 },
+  { key: "cerveja", label: "Cerveja", perAdult: 4, format: "can", pricePerUnit: 3.5 },
+  {
+    key: "refrigerante",
+    label: "Refrigerante",
+    perAdult: 0.5,
+    perChild: 0.3,
+    format: "l",
+    pricePerUnit: 8.0,
+  },
+  { key: "agua", label: "Água", perAdult: 0.5, perChild: 0.3, format: "l", pricePerUnit: 3.0 },
+  { key: "suco", label: "Suco", perAdult: 0.3, perChild: 0.4, format: "l", pricePerUnit: 12.0 },
 ];
 
 const EXTRAS: ItemDefinition[] = [
-  { key: "carvao", label: "Carvão", perAdult: 1, format: "kg", pricePerUnit: 25.00 },
-  { key: "sal_grosso", label: "Sal Grosso", perAdult: 0.1, format: "kg", pricePerUnit: 4.00 },
-  { key: "gelo", label: "Gelo", perAdult: 1, format: "kg", pricePerUnit: 8.00 },
+  { key: "carvao", label: "Carvão", perAdult: 1, format: "kg", pricePerUnit: 25.0 },
+  { key: "sal_grosso", label: "Sal Grosso", perAdult: 0.1, format: "kg", pricePerUnit: 4.0 },
+  { key: "gelo", label: "Gelo", perAdult: 1, format: "kg", pricePerUnit: 8.0 },
 ];
 
 // ============ DURAÇÕES ============
@@ -122,11 +194,17 @@ function roundUp(value: number): number {
 }
 
 function formatCurrency(value: number): string {
-  return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function calculateItemPrice(quantity: number, format: QuantityFormat, pricePerUnit?: number): number {
-  if (!pricePerUnit) { return 0; }
+function calculateItemPrice(
+  quantity: number,
+  format: QuantityFormat,
+  pricePerUnit?: number
+): number {
+  if (!pricePerUnit) {
+    return 0;
+  }
 
   switch (format) {
     case "g":
@@ -183,7 +261,14 @@ interface CounterProps {
   icon?: string;
 }
 
-const Counter = memo(function Counter({ label, value, onChange, min = 0, max = 100, icon }: CounterProps) {
+const Counter = memo(function Counter({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 100,
+  icon,
+}: CounterProps) {
   const handleDecrement = useCallback(() => {
     if (value > min) {
       haptics.light();
@@ -220,7 +305,11 @@ const Counter = memo(function Counter({ label, value, onChange, min = 0, max = 1
           accessibilityRole="button"
           accessibilityHint={`Valor atual: ${value}`}
         >
-          <FontAwesome name="minus" size={16} color={value <= min ? colors.textSecondary : colors.white} />
+          <FontAwesome
+            name="minus"
+            size={16}
+            color={value <= min ? colors.textSecondary : colors.white}
+          />
         </TouchableOpacity>
         <Text style={styles.counterValue}>{value}</Text>
         <TouchableOpacity
@@ -231,7 +320,11 @@ const Counter = memo(function Counter({ label, value, onChange, min = 0, max = 1
           accessibilityRole="button"
           accessibilityHint={`Valor atual: ${value}`}
         >
-          <FontAwesome name="plus" size={16} color={value >= max ? colors.textSecondary : colors.white} />
+          <FontAwesome
+            name="plus"
+            size={16}
+            color={value >= max ? colors.textSecondary : colors.white}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -246,7 +339,11 @@ interface DurationOptionProps {
   onSelect: () => void;
 }
 
-const DurationOption = memo(function DurationOption({ duration, isSelected, onSelect }: DurationOptionProps) {
+const DurationOption = memo(function DurationOption({
+  duration,
+  isSelected,
+  onSelect,
+}: DurationOptionProps) {
   const handlePress = useCallback(() => {
     haptics.medium();
     onSelect();
@@ -282,7 +379,15 @@ interface SummaryGridProps {
   totalCost: number;
 }
 
-const SummaryGrid = memo(function SummaryGrid({ participants, adults, totalMeat, totalBeer, totalSoda, totalCharcoal, totalCost }: SummaryGridProps) {
+const SummaryGrid = memo(function SummaryGrid({
+  participants,
+  adults,
+  totalMeat,
+  totalBeer,
+  totalSoda,
+  totalCharcoal,
+  totalCost,
+}: SummaryGridProps) {
   const costPerAdult = adults > 0 ? totalCost / adults : 0;
 
   return (
@@ -339,10 +444,7 @@ const MeatSelector = memo(function MeatSelector({ selectedMeats, onToggle }: Mea
       {MEAT_ITEMS.map((meat) => (
         <TouchableOpacity
           key={meat.key}
-          style={[
-            styles.meatChip,
-            selectedMeats[meat.key] && styles.meatChipSelected,
-          ]}
+          style={[styles.meatChip, selectedMeats[meat.key] && styles.meatChipSelected]}
           onPress={() => onToggle(meat.key)}
           activeOpacity={0.7}
           accessibilityLabel={`${meat.label}, ${selectedMeats[meat.key] ? "selecionado" : "não selecionado"}`}
@@ -350,16 +452,11 @@ const MeatSelector = memo(function MeatSelector({ selectedMeats, onToggle }: Mea
           accessibilityState={{ checked: selectedMeats[meat.key] }}
         >
           <Text
-            style={[
-              styles.meatChipText,
-              selectedMeats[meat.key] && styles.meatChipTextSelected,
-            ]}
+            style={[styles.meatChipText, selectedMeats[meat.key] && styles.meatChipTextSelected]}
           >
             {meat.label}
           </Text>
-          <Text style={styles.meatChipPrice}>
-            {formatCurrency(meat.pricePerUnit || 0)}/kg
-          </Text>
+          <Text style={styles.meatChipPrice}>{formatCurrency(meat.pricePerUnit || 0)}/kg</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -400,7 +497,10 @@ interface ProfileSelectorProps {
   customProfiles: ChurrascoProfile[];
 }
 
-const ProfileSelector = memo(function ProfileSelector({ onSelectProfile, customProfiles }: ProfileSelectorProps) {
+const ProfileSelector = memo(function ProfileSelector({
+  onSelectProfile,
+  customProfiles,
+}: ProfileSelectorProps) {
   const allProfiles = useMemo(() => [...customProfiles, ...CHURRASCO_PROFILES], [customProfiles]);
 
   return (
@@ -433,7 +533,13 @@ interface ToggleOptionProps {
   icon?: string;
 }
 
-const ToggleOption = memo(function ToggleOption({ label, description, value, onChange, icon }: ToggleOptionProps) {
+const ToggleOption = memo(function ToggleOption({
+  label,
+  description,
+  value,
+  onChange,
+  icon,
+}: ToggleOptionProps) {
   const handlePress = useCallback(() => {
     haptics.light();
     onChange(!value);
@@ -458,9 +564,7 @@ const ToggleOption = memo(function ToggleOption({ label, description, value, onC
           />
         )}
         <View style={styles.toggleTextContainer}>
-          <Text style={[styles.toggleLabel, value && styles.toggleLabelSelected]}>
-            {label}
-          </Text>
+          <Text style={[styles.toggleLabel, value && styles.toggleLabelSelected]}>{label}</Text>
           <Text style={[styles.toggleDescription, value && styles.toggleDescriptionSelected]}>
             {description}
           </Text>
@@ -501,9 +605,7 @@ const ResultCard = memo(function ResultCard({ section }: ResultCardProps) {
         {section.items.map((item) => (
           <View key={item.key} style={styles.resultItem}>
             <Text style={styles.resultItemLabel}>{item.label}</Text>
-            <Text style={styles.resultItemValue}>
-              {formatQuantity(item.quantity, item.format)}
-            </Text>
+            <Text style={styles.resultItemValue}>{formatQuantity(item.quantity, item.format)}</Text>
           </View>
         ))}
       </View>
@@ -554,23 +656,26 @@ export default function ChurrascometroScreen() {
   }, []);
 
   // Função para aplicar perfil de churrasco
-  const applyProfile = useCallback((profile: ChurrascoProfile) => {
-    haptics.success();
-    setMeatAdults(profile.config.meatAdults);
-    setVegetarianAdults(profile.config.vegetarianAdults);
-    setChildren(profile.config.children);
-    setBeerDrinkers(profile.config.beerDrinkers);
-    setDuration(profile.config.duration);
-    setSelectedMeats(profile.config.selectedMeats);
+  const applyProfile = useCallback(
+    (profile: ChurrascoProfile) => {
+      haptics.success();
+      setMeatAdults(profile.config.meatAdults);
+      setVegetarianAdults(profile.config.vegetarianAdults);
+      setChildren(profile.config.children);
+      setBeerDrinkers(profile.config.beerDrinkers);
+      setDuration(profile.config.duration);
+      setSelectedMeats(profile.config.selectedMeats);
 
-    alerts.success(
-      `${profile.icon} ${profile.name}`,
-      "Perfil aplicado! Ajuste os valores se necessário."
-    );
+      alerts.success(
+        `${profile.icon} ${profile.name}`,
+        "Perfil aplicado! Ajuste os valores se necessário."
+      );
 
-    // Mostrar anúncio intersticial após aplicar perfil
-    showAd();
-  }, [showAd]);
+      // Mostrar anúncio intersticial após aplicar perfil
+      showAd();
+    },
+    [showAd]
+  );
 
   // Função para toggle de carne
   const toggleMeat = useCallback((key: string) => {
@@ -605,10 +710,12 @@ export default function ChurrascometroScreen() {
     const meatMultiplier = selectedMeatCount > 0 ? 4 / selectedMeatCount : 1; // Baseado em 4 carnes originais
 
     // Calcular itens de carne (apenas para adultos carnívoros e carnes selecionadas)
-    const meatItems: CalculatedItem[] = MEAT_ITEMS
-      .filter((item) => selectedMeats[item.key])
-      .map((item) => {
-        const quantity = (item.perAdult * meatAdults + (item.perChild || 0) * children) * multiplier * meatMultiplier;
+    const meatItems: CalculatedItem[] = MEAT_ITEMS.filter((item) => selectedMeats[item.key]).map(
+      (item) => {
+        const quantity =
+          (item.perAdult * meatAdults + (item.perChild || 0) * children) *
+          multiplier *
+          meatMultiplier;
         const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
         return {
           key: item.key,
@@ -617,7 +724,8 @@ export default function ChurrascometroScreen() {
           format: item.format,
           price,
         };
-      });
+      }
+    );
 
     // Calcular itens vegetarianos (apenas para vegetarianos)
     const vegetarianItems: CalculatedItem[] = VEGETARIAN_ITEMS.map((item) => {
@@ -635,16 +743,17 @@ export default function ChurrascometroScreen() {
     // Calcular acompanhamentos (para todos) - apenas se habilitado
     const sideItems: CalculatedItem[] = includeSides
       ? SIDE_ITEMS.map((item) => {
-        const quantity = (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
-        const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
-        return {
-          key: item.key,
-          label: item.label,
-          quantity,
-          format: item.format,
-          price,
-        };
-      })
+          const quantity =
+            (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
+          const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
+          return {
+            key: item.key,
+            label: item.label,
+            quantity,
+            format: item.format,
+            price,
+          };
+        })
       : [];
 
     // Calcular bebidas
@@ -728,7 +837,17 @@ export default function ChurrascometroScreen() {
       totals: { totalMeat, totalBeer, totalSoda, totalCharcoal, totalCost },
       participants: { total: totalParticipants, adults: totalAdults, children },
     };
-  }, [meatAdults, vegetarianAdults, children, beerDrinkers, sodaDrinkers, duration, totalAdults, includeSides, selectedMeats]);
+  }, [
+    meatAdults,
+    vegetarianAdults,
+    children,
+    beerDrinkers,
+    sodaDrinkers,
+    duration,
+    totalAdults,
+    includeSides,
+    selectedMeats,
+  ]);
 
   // Função para gerar texto da lista de compras
   const generateShoppingListText = useCallback((): string => {
@@ -854,7 +973,9 @@ export default function ChurrascometroScreen() {
             };
 
             await saveCustomProfile(profile);
-            setCustomProfiles((prev) => [profile, ...prev.filter((p) => p.id !== profile.id)].slice(0, 5));
+            setCustomProfiles((prev) =>
+              [profile, ...prev.filter((p) => p.id !== profile.id)].slice(0, 5)
+            );
 
             // Mostrar anúncio intersticial
             showAd();
@@ -867,7 +988,16 @@ export default function ChurrascometroScreen() {
       "",
       "default"
     );
-  }, [result, meatAdults, vegetarianAdults, children, beerDrinkers, duration, selectedMeats, showAd]);
+  }, [
+    result,
+    meatAdults,
+    vegetarianAdults,
+    children,
+    beerDrinkers,
+    duration,
+    selectedMeats,
+    showAd,
+  ]);
 
   // Salvar último cálculo para o checklist quando o resultado mudar (automático)
   useEffect(() => {

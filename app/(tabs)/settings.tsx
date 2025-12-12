@@ -10,7 +10,14 @@ import {
   saveCustomItem,
   saveCustomPrices,
 } from "@/services/storage-service";
-import { alerts, haptics, isValidItemName, isValidPrice, sanitizePrice, sanitizeString } from "@/utils";
+import {
+  alerts,
+  haptics,
+  isValidItemName,
+  isValidPrice,
+  sanitizePrice,
+  sanitizeString,
+} from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -22,7 +29,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -37,31 +44,73 @@ interface PriceItem {
 
 const PRICE_ITEMS: PriceItem[] = [
   // Carnes
-  { key: "picanha", label: "Picanha", defaultPrice: 89.90, unit: "kg", category: "🥩 Carnes" },
-  { key: "costela", label: "Costela", defaultPrice: 34.90, unit: "kg", category: "🥩 Carnes" },
-  { key: "linguica", label: "Linguiça", defaultPrice: 24.90, unit: "kg", category: "🥩 Carnes" },
-  { key: "frango", label: "Coração/Frango", defaultPrice: 29.90, unit: "kg", category: "🥩 Carnes" },
-  { key: "maminha", label: "Maminha", defaultPrice: 54.90, unit: "kg", category: "🥩 Carnes" },
-  { key: "fraldinha", label: "Fraldinha", defaultPrice: 49.90, unit: "kg", category: "🥩 Carnes" },
+  { key: "picanha", label: "Picanha", defaultPrice: 89.9, unit: "kg", category: "🥩 Carnes" },
+  { key: "costela", label: "Costela", defaultPrice: 34.9, unit: "kg", category: "🥩 Carnes" },
+  { key: "linguica", label: "Linguiça", defaultPrice: 24.9, unit: "kg", category: "🥩 Carnes" },
+  { key: "frango", label: "Coração/Frango", defaultPrice: 29.9, unit: "kg", category: "🥩 Carnes" },
+  { key: "maminha", label: "Maminha", defaultPrice: 54.9, unit: "kg", category: "🥩 Carnes" },
+  { key: "fraldinha", label: "Fraldinha", defaultPrice: 49.9, unit: "kg", category: "🥩 Carnes" },
   // Vegetariano
-  { key: "queijo_coalho", label: "Queijo Coalho", defaultPrice: 45.90, unit: "kg", category: "🧀 Vegetariano" },
-  { key: "abacaxi", label: "Abacaxi", defaultPrice: 6.00, unit: "un", category: "🧀 Vegetariano" },
-  { key: "cogumelos", label: "Cogumelos", defaultPrice: 39.90, unit: "kg", category: "🧀 Vegetariano" },
-  { key: "legumes", label: "Legumes Grelhados", defaultPrice: 12.90, unit: "kg", category: "🧀 Vegetariano" },
+  {
+    key: "queijo_coalho",
+    label: "Queijo Coalho",
+    defaultPrice: 45.9,
+    unit: "kg",
+    category: "🧀 Vegetariano",
+  },
+  { key: "abacaxi", label: "Abacaxi", defaultPrice: 6.0, unit: "un", category: "🧀 Vegetariano" },
+  {
+    key: "cogumelos",
+    label: "Cogumelos",
+    defaultPrice: 39.9,
+    unit: "kg",
+    category: "🧀 Vegetariano",
+  },
+  {
+    key: "legumes",
+    label: "Legumes Grelhados",
+    defaultPrice: 12.9,
+    unit: "kg",
+    category: "🧀 Vegetariano",
+  },
   // Acompanhamentos
-  { key: "arroz", label: "Arroz", defaultPrice: 6.90, unit: "kg", category: "🍚 Acompanhamentos" },
-  { key: "farofa", label: "Farofa", defaultPrice: 8.90, unit: "kg", category: "🍚 Acompanhamentos" },
-  { key: "vinagrete", label: "Vinagrete", defaultPrice: 15.00, unit: "kg", category: "🍚 Acompanhamentos" },
-  { key: "pao_alho", label: "Pão de Alho", defaultPrice: 2.50, unit: "un", category: "🍚 Acompanhamentos" },
+  { key: "arroz", label: "Arroz", defaultPrice: 6.9, unit: "kg", category: "🍚 Acompanhamentos" },
+  { key: "farofa", label: "Farofa", defaultPrice: 8.9, unit: "kg", category: "🍚 Acompanhamentos" },
+  {
+    key: "vinagrete",
+    label: "Vinagrete",
+    defaultPrice: 15.0,
+    unit: "kg",
+    category: "🍚 Acompanhamentos",
+  },
+  {
+    key: "pao_alho",
+    label: "Pão de Alho",
+    defaultPrice: 2.5,
+    unit: "un",
+    category: "🍚 Acompanhamentos",
+  },
   // Bebidas
-  { key: "cerveja", label: "Cerveja (lata)", defaultPrice: 3.50, unit: "un", category: "🍺 Bebidas" },
-  { key: "refrigerante", label: "Refrigerante", defaultPrice: 8.00, unit: "L", category: "🍺 Bebidas" },
-  { key: "agua", label: "Água", defaultPrice: 3.00, unit: "L", category: "🍺 Bebidas" },
-  { key: "suco", label: "Suco", defaultPrice: 12.00, unit: "L", category: "🍺 Bebidas" },
+  {
+    key: "cerveja",
+    label: "Cerveja (lata)",
+    defaultPrice: 3.5,
+    unit: "un",
+    category: "🍺 Bebidas",
+  },
+  {
+    key: "refrigerante",
+    label: "Refrigerante",
+    defaultPrice: 8.0,
+    unit: "L",
+    category: "🍺 Bebidas",
+  },
+  { key: "agua", label: "Água", defaultPrice: 3.0, unit: "L", category: "🍺 Bebidas" },
+  { key: "suco", label: "Suco", defaultPrice: 12.0, unit: "L", category: "🍺 Bebidas" },
   // Extras
-  { key: "carvao", label: "Carvão", defaultPrice: 25.00, unit: "kg", category: "🔥 Extras" },
-  { key: "sal_grosso", label: "Sal Grosso", defaultPrice: 4.00, unit: "kg", category: "🔥 Extras" },
-  { key: "gelo", label: "Gelo", defaultPrice: 8.00, unit: "kg", category: "🔥 Extras" },
+  { key: "carvao", label: "Carvão", defaultPrice: 25.0, unit: "kg", category: "🔥 Extras" },
+  { key: "sal_grosso", label: "Sal Grosso", defaultPrice: 4.0, unit: "kg", category: "🔥 Extras" },
+  { key: "gelo", label: "Gelo", defaultPrice: 8.0, unit: "kg", category: "🔥 Extras" },
 ];
 
 const CATEGORIES = [
@@ -239,20 +288,26 @@ export default function SettingsScreen() {
   }, []);
 
   // Agrupa itens por categoria (incluindo customizados)
-  const groupedItems = [...PRICE_ITEMS, ...customItems.map((ci) => ({
-    key: ci.key,
-    label: ci.label,
-    defaultPrice: ci.price,
-    unit: ci.unit,
-    category: ci.category,
-    isCustom: true,
-  }))].reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<string, (PriceItem & { isCustom?: boolean })[]>);
+  const groupedItems = [
+    ...PRICE_ITEMS,
+    ...customItems.map((ci) => ({
+      key: ci.key,
+      label: ci.label,
+      defaultPrice: ci.price,
+      unit: ci.unit,
+      category: ci.category,
+      isCustom: true,
+    })),
+  ].reduce(
+    (acc, item) => {
+      if (!acc[item.category]) {
+        acc[item.category] = [];
+      }
+      acc[item.category].push(item);
+      return acc;
+    },
+    {} as Record<string, (PriceItem & { isCustom?: boolean })[]>
+  );
 
   if (loading) {
     return (
@@ -278,9 +333,7 @@ export default function SettingsScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>⚙️ Configurar Preços</Text>
-            <Text style={styles.subtitle}>
-              Ajuste os preços conforme sua região
-            </Text>
+            <Text style={styles.subtitle}>Ajuste os preços conforme sua região</Text>
           </View>
 
           {/* Lista de preços por categoria */}
@@ -297,17 +350,16 @@ export default function SettingsScreen() {
                   return (
                     <View
                       key={item.key}
-                      style={[
-                        styles.priceRow,
-                        index < items.length - 1 && styles.priceRowBorder,
-                      ]}
+                      style={[styles.priceRow, index < items.length - 1 && styles.priceRowBorder]}
                     >
                       <View style={styles.priceLabel}>
                         <View style={styles.labelRow}>
                           <Text style={styles.itemName}>{item.label}</Text>
                           {isCustomItem && (
                             <TouchableOpacity
-                              onPress={() => handleDeleteItem(customItems.find((ci) => ci.key === item.key)!)}
+                              onPress={() =>
+                                handleDeleteItem(customItems.find((ci) => ci.key === item.key)!)
+                              }
                               style={styles.deleteButton}
                               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
@@ -320,10 +372,7 @@ export default function SettingsScreen() {
                       <View style={styles.priceInputContainer}>
                         <Text style={styles.currency}>R$</Text>
                         <TextInput
-                          style={[
-                            styles.priceInput,
-                            isDifferent && styles.priceInputModified,
-                          ]}
+                          style={[styles.priceInput, isDifferent && styles.priceInputModified]}
                           value={editedPrices[item.key]}
                           onChangeText={(value) => handlePriceChange(item.key, value)}
                           keyboardType="decimal-pad"
@@ -422,10 +471,7 @@ export default function SettingsScreen() {
               {UNITS.map((unit) => (
                 <TouchableOpacity
                   key={unit}
-                  style={[
-                    styles.optionChip,
-                    newItemUnit === unit && styles.optionChipActive,
-                  ]}
+                  style={[styles.optionChip, newItemUnit === unit && styles.optionChipActive]}
                   onPress={() => setNewItemUnit(unit)}
                 >
                   <Text
@@ -450,10 +496,7 @@ export default function SettingsScreen() {
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat}
-                    style={[
-                      styles.optionChip,
-                      newItemCategory === cat && styles.optionChipActive,
-                    ]}
+                    style={[styles.optionChip, newItemCategory === cat && styles.optionChipActive]}
                     onPress={() => setNewItemCategory(cat)}
                   >
                     <Text
@@ -476,10 +519,7 @@ export default function SettingsScreen() {
               >
                 <Text style={styles.modalCancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalSaveButton}
-                onPress={handleAddItem}
-              >
+              <TouchableOpacity style={styles.modalSaveButton} onPress={handleAddItem}>
                 <FontAwesome name="plus" size={14} color="#fff" />
                 <Text style={styles.modalSaveText}>Adicionar</Text>
               </TouchableOpacity>

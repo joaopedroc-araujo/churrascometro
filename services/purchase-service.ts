@@ -47,8 +47,7 @@ class PurchaseService {
   private isConnected = false;
   private purchaseUpdateSubscription: any = null;
   private purchaseErrorSubscription: any = null;
-  private pendingPurchaseResolve: ((result: PurchaseResult) => void) | null =
-    null;
+  private pendingPurchaseResolve: ((result: PurchaseResult) => void) | null = null;
 
   // Conectar ao serviço de compras
   async connect(): Promise<boolean> {
@@ -75,39 +74,37 @@ class PurchaseService {
 
   // Configurar listeners de compras
   private setupListeners(): void {
-    if (!RNIap || this.purchaseUpdateSubscription) {return;}
+    if (!RNIap || this.purchaseUpdateSubscription) {
+      return;
+    }
 
-    this.purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(
-      async (purchase) => {
-        console.log("[IAP] Compra atualizada:", purchase);
+    this.purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(async (purchase) => {
+      console.log("[IAP] Compra atualizada:", purchase);
 
-        try {
-          // Finalizar transação (acknowledge)
-          if (Platform.OS === "android" && purchase.purchaseToken) {
-            await RNIap!.acknowledgePurchaseAndroid(purchase.purchaseToken);
-          } else {
-            await RNIap!.finishTransaction({ purchase });
-          }
-
-          const purchaseData: PurchaseData = {
-            productId: purchase.productId,
-            purchaseToken: purchase.purchaseToken || "",
-            transactionId: purchase.transactionId || "",
-            purchaseTime: new Date(
-              purchase.transactionDate || Date.now()
-            ).getTime(),
-            acknowledged: true,
-          };
-
-          if (this.pendingPurchaseResolve) {
-            this.pendingPurchaseResolve({ success: true, purchaseData });
-            this.pendingPurchaseResolve = null;
-          }
-        } catch (error) {
-          console.error("[IAP] Erro ao finalizar transação:", error);
+      try {
+        // Finalizar transação (acknowledge)
+        if (Platform.OS === "android" && purchase.purchaseToken) {
+          await RNIap!.acknowledgePurchaseAndroid(purchase.purchaseToken);
+        } else {
+          await RNIap!.finishTransaction({ purchase });
         }
+
+        const purchaseData: PurchaseData = {
+          productId: purchase.productId,
+          purchaseToken: purchase.purchaseToken || "",
+          transactionId: purchase.transactionId || "",
+          purchaseTime: new Date(purchase.transactionDate || Date.now()).getTime(),
+          acknowledged: true,
+        };
+
+        if (this.pendingPurchaseResolve) {
+          this.pendingPurchaseResolve({ success: true, purchaseData });
+          this.pendingPurchaseResolve = null;
+        }
+      } catch (error) {
+        console.error("[IAP] Erro ao finalizar transação:", error);
       }
-    );
+    });
 
     this.purchaseErrorSubscription = RNIap.purchaseErrorListener((error) => {
       console.error("[IAP] Erro na compra:", error);
@@ -125,7 +122,9 @@ class PurchaseService {
 
   // Desconectar
   async disconnect(): Promise<void> {
-    if (!isIAPAvailable || !RNIap || !this.isConnected) {return;}
+    if (!isIAPAvailable || !RNIap || !this.isConnected) {
+      return;
+    }
 
     try {
       if (this.purchaseUpdateSubscription) {
@@ -145,7 +144,9 @@ class PurchaseService {
 
   // Obter produtos disponíveis
   async getProducts(): Promise<any[]> {
-    if (!isIAPAvailable || !RNIap) {return [];}
+    if (!isIAPAvailable || !RNIap) {
+      return [];
+    }
 
     try {
       if (!this.isConnected) {
@@ -246,9 +247,7 @@ class PurchaseService {
       }
 
       // Procurar compra do premium
-      const premiumPurchase = purchases.find(
-        (p) => p.productId === PRODUCT_IDS.PREMIUM_LIFETIME
-      );
+      const premiumPurchase = purchases.find((p) => p.productId === PRODUCT_IDS.PREMIUM_LIFETIME);
 
       if (!premiumPurchase) {
         console.log("[IAP] Compra premium não encontrada");
@@ -263,9 +262,7 @@ class PurchaseService {
           productId: premiumPurchase.productId,
           purchaseToken: premiumPurchase.purchaseToken || "",
           transactionId: premiumPurchase.transactionId || "",
-          purchaseTime: new Date(
-            premiumPurchase.transactionDate || 0
-          ).getTime(),
+          purchaseTime: new Date(premiumPurchase.transactionDate || 0).getTime(),
           acknowledged: true,
         },
       };
@@ -301,9 +298,7 @@ class PurchaseService {
           productId: premiumPurchase.productId,
           purchaseToken: premiumPurchase.purchaseToken || "",
           transactionId: premiumPurchase.transactionId || "",
-          purchaseTime: new Date(
-            premiumPurchase.transactionDate || 0
-          ).getTime(),
+          purchaseTime: new Date(premiumPurchase.transactionDate || 0).getTime(),
           acknowledged: true,
         };
 

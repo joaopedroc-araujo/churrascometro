@@ -4,7 +4,7 @@ import {
   clearChecklist,
   getChecklist,
   getLastCalculation,
-  saveChecklist
+  saveChecklist,
 } from "@/services/storage-service";
 import { alerts, haptics } from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -75,20 +75,21 @@ export default function ChecklistScreen() {
     loadData();
   }, [loadData]);
 
-  const toggleItem = useCallback(async (key: string) => {
-    haptics.light();
+  const toggleItem = useCallback(
+    async (key: string) => {
+      haptics.light();
 
-    const newChecked = { ...checkedItems, [key]: !checkedItems[key] };
-    setCheckedItems(newChecked);
+      const newChecked = { ...checkedItems, [key]: !checkedItems[key] };
+      setCheckedItems(newChecked);
 
-    setItems((prev) =>
-      prev.map((item) =>
-        item.key === key ? { ...item, checked: !item.checked } : item
-      )
-    );
+      setItems((prev) =>
+        prev.map((item) => (item.key === key ? { ...item, checked: !item.checked } : item))
+      );
 
-    await saveChecklist(newChecked);
-  }, [checkedItems]);
+      await saveChecklist(newChecked);
+    },
+    [checkedItems]
+  );
 
   const clearAll = useCallback(() => {
     alerts.confirmClear("Desmarcar todos os itens?", async () => {
@@ -132,13 +133,16 @@ export default function ChecklistScreen() {
     .reduce((sum, item) => sum + item.price, 0);
 
   // Agrupa itens por seção
-  const groupedItems = items.reduce((acc, item) => {
-    if (!acc[item.section]) {
-      acc[item.section] = [];
-    }
-    acc[item.section].push(item);
-    return acc;
-  }, {} as Record<string, ChecklistItem[]>);
+  const groupedItems = items.reduce(
+    (acc, item) => {
+      if (!acc[item.section]) {
+        acc[item.section] = [];
+      }
+      acc[item.section].push(item);
+      return acc;
+    },
+    {} as Record<string, ChecklistItem[]>
+  );
 
   if (loading) {
     return (
@@ -170,9 +174,7 @@ export default function ChecklistScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Header com progresso */}
         <View style={styles.header}>
@@ -190,15 +192,11 @@ export default function ChecklistScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Falta gastar</Text>
-              <Text style={styles.statValue}>
-                R$ {remainingCost.toFixed(2).replace(".", ",")}
-              </Text>
+              <Text style={styles.statValue}>R$ {remainingCost.toFixed(2).replace(".", ",")}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Total</Text>
-              <Text style={styles.statValueSmall}>
-                R$ {totalCost.toFixed(2).replace(".", ",")}
-              </Text>
+              <Text style={styles.statValueSmall}>R$ {totalCost.toFixed(2).replace(".", ",")}</Text>
             </View>
           </View>
         </View>
@@ -224,29 +222,14 @@ export default function ChecklistScreen() {
                     color={item.checked ? colors.success : colors.textSecondary}
                   />
                   <View style={styles.itemContent}>
-                    <Text
-                      style={[
-                        styles.itemLabel,
-                        item.checked && styles.itemLabelChecked,
-                      ]}
-                    >
+                    <Text style={[styles.itemLabel, item.checked && styles.itemLabelChecked]}>
                       {item.label}
                     </Text>
-                    <Text
-                      style={[
-                        styles.itemQuantity,
-                        item.checked && styles.itemQuantityChecked,
-                      ]}
-                    >
+                    <Text style={[styles.itemQuantity, item.checked && styles.itemQuantityChecked]}>
                       {item.quantity}
                     </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.itemPrice,
-                      item.checked && styles.itemPriceChecked,
-                    ]}
-                  >
+                  <Text style={[styles.itemPrice, item.checked && styles.itemPriceChecked]}>
                     R$ {item.price.toFixed(2).replace(".", ",")}
                   </Text>
                 </TouchableOpacity>
@@ -257,20 +240,12 @@ export default function ChecklistScreen() {
 
         {/* Botões de ação */}
         <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShare}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.shareButton} onPress={handleShare} activeOpacity={0.8}>
             <FontAwesome name="whatsapp" size={20} color="#fff" />
             <Text style={styles.shareButtonText}>Compartilhar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={clearAll}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.clearButton} onPress={clearAll} activeOpacity={0.8}>
             <FontAwesome name="refresh" size={16} color={colors.textSecondary} />
             <Text style={styles.clearButtonText}>Limpar</Text>
           </TouchableOpacity>

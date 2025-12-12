@@ -164,14 +164,9 @@ export async function getLastCalculation(): Promise<LastCalculation | null> {
   }
 }
 
-export async function saveLastCalculation(
-  calculation: LastCalculation
-): Promise<void> {
+export async function saveLastCalculation(calculation: LastCalculation): Promise<void> {
   try {
-    await AsyncStorage.setItem(
-      KEYS.LAST_CALCULATION,
-      JSON.stringify(calculation)
-    );
+    await AsyncStorage.setItem(KEYS.LAST_CALCULATION, JSON.stringify(calculation));
   } catch (error) {
     console.error("Erro ao salvar cálculo:", error);
   }
@@ -354,9 +349,7 @@ export async function getCustomProfiles(): Promise<ChurrascoProfile[]> {
   }
 }
 
-export async function saveCustomProfile(
-  profile: ChurrascoProfile
-): Promise<void> {
+export async function saveCustomProfile(profile: ChurrascoProfile): Promise<void> {
   try {
     const profiles = await getCustomProfiles();
     // Verifica se já existe um perfil com o mesmo nome

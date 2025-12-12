@@ -39,11 +39,9 @@ export default function UpgradeScreen() {
       if (result.success && result.purchaseData) {
         // Salvar com dados completos da compra para validação segura
         await setPremium(true, result.purchaseData);
-        Alert.alert(
-          "🎉 Parabéns!",
-          "Você agora é Premium! Todos os anúncios foram removidos.",
-          [{ text: "Oba!", onPress: () => router.back() }]
-        );
+        Alert.alert("🎉 Parabéns!", "Você agora é Premium! Todos os anúncios foram removidos.", [
+          { text: "Oba!", onPress: () => router.back() },
+        ]);
       } else if (result.error !== "Compra cancelada") {
         Alert.alert("Erro", result.error || "Não foi possível completar a compra");
       }
@@ -62,11 +60,9 @@ export default function UpgradeScreen() {
       const restored = await restorePurchase();
 
       if (restored) {
-        Alert.alert(
-          "✅ Restaurado!",
-          "Sua compra foi restaurada e verificada com sucesso.",
-          [{ text: "OK", onPress: () => router.back() }]
-        );
+        Alert.alert("✅ Restaurado!", "Sua compra foi restaurada e verificada com sucesso.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
       } else {
         Alert.alert(
           "Não encontrado",
@@ -91,19 +87,14 @@ export default function UpgradeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.crownContainer}>
             <FontAwesome name="star" size={48} color={colors.warning} />
           </View>
           <Text style={styles.title}>Churrascômetro Premium</Text>
-          <Text style={styles.subtitle}>
-            Remova todos os anúncios com um único pagamento
-          </Text>
+          <Text style={styles.subtitle}>Remova todos os anúncios com um único pagamento</Text>
         </View>
 
         {/* Price */}
@@ -128,7 +119,10 @@ export default function UpgradeScreen() {
 
         {/* Purchase Button */}
         <TouchableOpacity
-          style={[styles.purchaseButton, (isLoading || isRestoring) && styles.purchaseButtonDisabled]}
+          style={[
+            styles.purchaseButton,
+            (isLoading || isRestoring) && styles.purchaseButtonDisabled,
+          ]}
           onPress={handlePurchase}
           disabled={isLoading || isRestoring}
           activeOpacity={0.8}

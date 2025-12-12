@@ -17,16 +17,13 @@ export const haptics = {
   selection: () => Haptics.selectionAsync(),
 
   /** Feedback de sucesso (salvar, completar, etc.) */
-  success: () =>
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+  success: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
 
   /** Feedback de erro */
-  error: () =>
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+  error: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
 
   /** Feedback de aviso (deletar, limpar, etc.) */
-  warning: () =>
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
+  warning: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
 };
 
 export default haptics;
