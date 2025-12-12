@@ -10,7 +10,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -36,6 +36,20 @@ export default function TabLayout() {
         options={{
           title: 'Calculadora',
           tabBarIcon: ({ color }) => <TabBarIcon name="fire" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="checklist"
+        options={{
+          title: 'Checklist',
+          tabBarIcon: ({ color }) => <TabBarIcon name="check-square-o" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Preços',
+          tabBarIcon: ({ color }) => <TabBarIcon name="dollar" color={color} />,
         }}
       />
       <Tabs.Screen

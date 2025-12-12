@@ -7,6 +7,8 @@ export const colors = {
   textSecondary: "#A0A0A0", // Texto secundário
   success: "#4CAF50", // Verde
   warning: "#FF9800", // Amarelo
+  error: "#F44336", // Vermelho erro
+  info: "#2196F3", // Azul informação
   border: "#2D3A5C",
   white: "#FFFFFF",
   black: "#000000",

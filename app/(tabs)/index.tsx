@@ -1,10 +1,12 @@
 import { BottomAdBanner, useInterstitialAd } from "@/components/ads";
 import { PromoBanner, useAutoUpgrade } from "@/components/premium";
 import { borderRadius, colors, spacing } from "@/constants/theme";
+import { CHURRASCO_PROFILES, ChurrascoProfile, clearChecklist, getCustomPrices, getCustomProfiles, LastCalculation, saveCustomProfile, saveLastCalculation } from "@/services/storage-service";
+import { alerts, haptics } from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -178,20 +180,20 @@ interface CounterProps {
   icon?: string;
 }
 
-function Counter({ label, value, onChange, min = 0, max = 100, icon }: CounterProps) {
-  const handleDecrement = () => {
+const Counter = memo(function Counter({ label, value, onChange, min = 0, max = 100, icon }: CounterProps) {
+  const handleDecrement = useCallback(() => {
     if (value > min) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptics.light();
       onChange(value - 1);
     }
-  };
+  }, [value, min, onChange]);
 
-  const handleIncrement = () => {
+  const handleIncrement = useCallback(() => {
     if (value < max) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptics.light();
       onChange(value + 1);
     }
-  };
+  }, [value, max, onChange]);
 
   return (
     <View style={styles.counterContainer}>
@@ -211,6 +213,9 @@ function Counter({ label, value, onChange, min = 0, max = 100, icon }: CounterPr
           style={[styles.counterButton, value <= min && styles.counterButtonDisabled]}
           onPress={handleDecrement}
           disabled={value <= min}
+          accessibilityLabel={`Diminuir ${label}`}
+          accessibilityRole="button"
+          accessibilityHint={`Valor atual: ${value}`}
         >
           <FontAwesome name="minus" size={16} color={value <= min ? colors.textSecondary : colors.white} />
         </TouchableOpacity>
@@ -219,13 +224,16 @@ function Counter({ label, value, onChange, min = 0, max = 100, icon }: CounterPr
           style={[styles.counterButton, value >= max && styles.counterButtonDisabled]}
           onPress={handleIncrement}
           disabled={value >= max}
+          accessibilityLabel={`Aumentar ${label}`}
+          accessibilityRole="button"
+          accessibilityHint={`Valor atual: ${value}`}
         >
           <FontAwesome name="plus" size={16} color={value >= max ? colors.textSecondary : colors.white} />
         </TouchableOpacity>
       </View>
     </View>
   );
-}
+});
 
 // ============ COMPONENTE DURATION OPTION ============
 
@@ -235,16 +243,19 @@ interface DurationOptionProps {
   onSelect: () => void;
 }
 
-function DurationOption({ duration, isSelected, onSelect }: DurationOptionProps) {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+const DurationOption = memo(function DurationOption({ duration, isSelected, onSelect }: DurationOptionProps) {
+  const handlePress = useCallback(() => {
+    haptics.medium();
     onSelect();
-  };
+  }, [onSelect]);
 
   return (
     <TouchableOpacity
       style={[styles.durationOption, isSelected && styles.durationOptionSelected]}
       onPress={handlePress}
+      accessibilityLabel={`Duração ${duration.label}`}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: isSelected }}
     >
       <Text style={[styles.durationLabel, isSelected && styles.durationLabelSelected]}>
         {duration.label}
@@ -254,12 +265,13 @@ function DurationOption({ duration, isSelected, onSelect }: DurationOptionProps)
       </Text>
     </TouchableOpacity>
   );
-}
+});
 
 // ============ COMPONENTE SUMMARY GRID ============
 
 interface SummaryGridProps {
   participants: number;
+  adults: number;
   totalMeat: number;
   totalBeer: number;
   totalSoda: number;
@@ -267,9 +279,11 @@ interface SummaryGridProps {
   totalCost: number;
 }
 
-function SummaryGrid({ participants, totalMeat, totalBeer, totalSoda, totalCharcoal, totalCost }: SummaryGridProps) {
+const SummaryGrid = memo(function SummaryGrid({ participants, adults, totalMeat, totalBeer, totalSoda, totalCharcoal, totalCost }: SummaryGridProps) {
+  const costPerAdult = adults > 0 ? totalCost / adults : 0;
+
   return (
-    <View style={styles.summaryGrid}>
+    <View style={styles.summaryGrid} accessibilityRole="summary">
       <View style={styles.summaryItem}>
         <FontAwesome name="users" size={24} color={colors.secondary} />
         <Text style={styles.summaryValue}>{participants}</Text>
@@ -300,9 +314,14 @@ function SummaryGrid({ participants, totalMeat, totalBeer, totalSoda, totalCharc
         <Text style={styles.summaryValueHighlight}>{formatCurrency(totalCost)}</Text>
         <Text style={styles.summaryLabel}>Total Estimado</Text>
       </View>
+      <View style={[styles.summaryItem, styles.summaryItemPerPerson]}>
+        <FontAwesome name="user" size={24} color={colors.secondary} />
+        <Text style={styles.summaryValuePerPerson}>{formatCurrency(costPerAdult)}</Text>
+        <Text style={styles.summaryLabel}>Por Adulto</Text>
+      </View>
     </View>
   );
-}
+});
 
 // ============ COMPONENTE MEAT SELECTOR ============
 
@@ -311,9 +330,9 @@ interface MeatSelectorProps {
   onToggle: (key: string) => void;
 }
 
-function MeatSelector({ selectedMeats, onToggle }: MeatSelectorProps) {
+const MeatSelector = memo(function MeatSelector({ selectedMeats, onToggle }: MeatSelectorProps) {
   return (
-    <View style={styles.meatSelectorContainer}>
+    <View style={styles.meatSelectorContainer} accessibilityRole="radiogroup">
       {MEAT_ITEMS.map((meat) => (
         <TouchableOpacity
           key={meat.key}
@@ -323,6 +342,9 @@ function MeatSelector({ selectedMeats, onToggle }: MeatSelectorProps) {
           ]}
           onPress={() => onToggle(meat.key)}
           activeOpacity={0.7}
+          accessibilityLabel={`${meat.label}, ${selectedMeats[meat.key] ? "selecionado" : "não selecionado"}`}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: selectedMeats[meat.key] }}
         >
           <Text
             style={[
@@ -339,7 +361,64 @@ function MeatSelector({ selectedMeats, onToggle }: MeatSelectorProps) {
       ))}
     </View>
   );
+});
+
+// ============ COMPONENTE PROFILE SELECTOR ============
+
+interface ProfileCardProps {
+  profile: ChurrascoProfile;
+  onSelect: () => void;
+  isCustom?: boolean;
 }
+
+const ProfileCard = memo(function ProfileCard({ profile, onSelect, isCustom }: ProfileCardProps) {
+  return (
+    <TouchableOpacity
+      style={[styles.profileCard, isCustom && styles.profileCardCustom]}
+      onPress={onSelect}
+      activeOpacity={0.7}
+      accessibilityLabel={`Perfil ${profile.name}: ${profile.description}`}
+      accessibilityRole="button"
+    >
+      <Text style={styles.profileIcon}>{profile.icon}</Text>
+      <Text style={styles.profileName}>{profile.name}</Text>
+      <Text style={styles.profileDescription}>{profile.description}</Text>
+      {isCustom && (
+        <View style={styles.customBadge}>
+          <Text style={styles.customBadgeText}>Meu</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+});
+
+interface ProfileSelectorProps {
+  onSelectProfile: (profile: ChurrascoProfile) => void;
+  customProfiles: ChurrascoProfile[];
+}
+
+const ProfileSelector = memo(function ProfileSelector({ onSelectProfile, customProfiles }: ProfileSelectorProps) {
+  const allProfiles = useMemo(() => [...customProfiles, ...CHURRASCO_PROFILES], [customProfiles]);
+
+  return (
+    <View style={styles.profileSelectorContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.profileScrollContent}
+      >
+        {allProfiles.map((profile) => (
+          <ProfileCard
+            key={profile.id}
+            profile={profile}
+            onSelect={() => onSelectProfile(profile)}
+            isCustom={customProfiles.some((p) => p.id === profile.id)}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
 
 // ============ COMPONENTE TOGGLE OPTION ============
 
@@ -351,17 +430,20 @@ interface ToggleOptionProps {
   icon?: string;
 }
 
-function ToggleOption({ label, description, value, onChange, icon }: ToggleOptionProps) {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+const ToggleOption = memo(function ToggleOption({ label, description, value, onChange, icon }: ToggleOptionProps) {
+  const handlePress = useCallback(() => {
+    haptics.light();
     onChange(!value);
-  };
+  }, [value, onChange]);
 
   return (
     <TouchableOpacity
       style={[styles.toggleOption, value && styles.toggleOptionSelected]}
       onPress={handlePress}
       activeOpacity={0.7}
+      accessibilityLabel={`${label}: ${description}`}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
     >
       <View style={styles.toggleOptionContent}>
         {icon && (
@@ -386,7 +468,7 @@ function ToggleOption({ label, description, value, onChange, icon }: ToggleOptio
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 // ============ COMPONENTE RESULT CARD ============
 
@@ -394,7 +476,7 @@ interface ResultCardProps {
   section: Section;
 }
 
-function ResultCard({ section }: ResultCardProps) {
+const ResultCard = memo(function ResultCard({ section }: ResultCardProps) {
   const getIconName = (icon: string) => {
     const iconMap: Record<string, any> = {
       meat: "cutlery",
@@ -424,7 +506,7 @@ function ResultCard({ section }: ResultCardProps) {
       </View>
     </View>
   );
-}
+});
 
 // ============ COMPONENTE PRINCIPAL ============
 
@@ -443,6 +525,12 @@ export default function ChurrascometroScreen() {
   const [sodaDrinkers, setSodaDrinkers] = useState(0);
   const [duration, setDuration] = useState<"short" | "long">("short");
 
+  // Estado para preços customizados
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+
+  // Estado para perfis customizados
+  const [customProfiles, setCustomProfiles] = useState<ChurrascoProfile[]>([]);
+
   // Estado para opções extras
   const [includeSides, setIncludeSides] = useState(true);
 
@@ -456,11 +544,36 @@ export default function ChurrascometroScreen() {
     fraldinha: false,
   });
 
+  // Carregar preços customizados e perfis
+  useEffect(() => {
+    getCustomPrices().then(setCustomPrices);
+    getCustomProfiles().then(setCustomProfiles);
+  }, []);
+
+  // Função para aplicar perfil de churrasco
+  const applyProfile = useCallback((profile: ChurrascoProfile) => {
+    haptics.success();
+    setMeatAdults(profile.config.meatAdults);
+    setVegetarianAdults(profile.config.vegetarianAdults);
+    setChildren(profile.config.children);
+    setBeerDrinkers(profile.config.beerDrinkers);
+    setDuration(profile.config.duration);
+    setSelectedMeats(profile.config.selectedMeats);
+
+    alerts.success(
+      `${profile.icon} ${profile.name}`,
+      "Perfil aplicado! Ajuste os valores se necessário."
+    );
+
+    // Mostrar anúncio intersticial após aplicar perfil
+    showAd();
+  }, [showAd]);
+
   // Função para toggle de carne
-  const toggleMeat = (key: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const toggleMeat = useCallback((key: string) => {
+    haptics.light();
     setSelectedMeats((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
   // Limitar beerDrinkers ao total de adultos
   const totalAdults = meatAdults + vegetarianAdults;
@@ -615,7 +728,7 @@ export default function ChurrascometroScreen() {
   }, [meatAdults, vegetarianAdults, children, beerDrinkers, sodaDrinkers, duration, totalAdults, includeSides, selectedMeats]);
 
   // Função para gerar texto da lista de compras
-  const generateShoppingListText = (): string => {
+  const generateShoppingListText = useCallback((): string => {
     let text = "🔥 *LISTA DE CHURRASCO* 🔥\n\n";
     text += `👥 ${result.participants.total} pessoas (${result.participants.adults} adultos, ${result.participants.children} crianças)\n\n`;
 
@@ -634,16 +747,16 @@ export default function ChurrascometroScreen() {
     });
 
     text += `💰 *TOTAL ESTIMADO: ${formatCurrency(result.totals.totalCost)}*\n`;
-    text += `📱 Por pessoa: ${formatCurrency(result.totals.totalCost / result.participants.total)}\n\n`;
+    text += `📱 Por adulto: ${formatCurrency(result.totals.totalCost / result.participants.adults)}\n\n`;
     text += "📲 Calculado pelo Churrascômetro";
 
     return text;
-  };
+  }, [result]);
 
   // Função para compartilhar
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      haptics.medium();
       const message = generateShoppingListText();
       await Share.share({
         message,
@@ -652,9 +765,129 @@ export default function ChurrascometroScreen() {
       // Mostrar anúncio intersticial após compartilhar
       showAd();
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível compartilhar a lista");
+      alerts.error("Não foi possível compartilhar a lista");
     }
-  };
+  }, [generateShoppingListText, showAd]);
+
+  // Função para salvar churrasco e ir para checklist
+  const handleSaveChurrasco = useCallback(async () => {
+    if (result.participants.total === 0) {
+      alerts.warning("Opa!", "Adicione pelo menos um convidado para salvar o churrasco.");
+      return;
+    }
+
+    haptics.success();
+
+    // Salvar o cálculo
+    const items: LastCalculation["items"] = [];
+    result.sections.forEach((section) => {
+      section.items.forEach((item) => {
+        items.push({
+          key: item.key,
+          label: item.label,
+          quantity: formatQuantity(item.quantity, item.format),
+          price: item.price || 0,
+          section: section.title,
+        });
+      });
+    });
+
+    await saveLastCalculation({
+      items,
+      totalCost: result.totals.totalCost,
+      date: new Date().toISOString(),
+    });
+
+    // Limpar checklist anterior
+    await clearChecklist();
+
+    // Mostrar anúncio intersticial
+    showAd();
+
+    // Navegar para a aba de checklist
+    alerts.confirm(
+      "🎉 Churrasco Salvo!",
+      "Sua lista de compras está pronta na aba Checklist.",
+      "Ver Checklist",
+      () => router.push("/(tabs)/checklist")
+    );
+  }, [result, showAd]);
+
+  // Função para salvar como perfil customizado
+  const handleSaveAsProfile = useCallback(() => {
+    if (result.participants.total === 0) {
+      alerts.warning("Opa!", "Adicione pelo menos um convidado para salvar o perfil.");
+      return;
+    }
+
+    Alert.prompt(
+      "💾 Salvar Perfil",
+      "Dê um nome para este perfil de churrasco:",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Salvar",
+          onPress: async (name: string | undefined) => {
+            if (!name || name.trim() === "") {
+              alerts.error("Digite um nome para o perfil.");
+              return;
+            }
+
+            haptics.success();
+
+            const profile: ChurrascoProfile = {
+              id: `custom-${Date.now()}`,
+              name: name.trim(),
+              icon: "⭐",
+              description: `${result.participants.total} pessoas`,
+              config: {
+                meatAdults,
+                vegetarianAdults,
+                children,
+                beerDrinkers,
+                duration,
+                selectedMeats,
+              },
+            };
+
+            await saveCustomProfile(profile);
+            setCustomProfiles((prev) => [profile, ...prev.filter((p) => p.id !== profile.id)].slice(0, 5));
+
+            // Mostrar anúncio intersticial
+            showAd();
+
+            alerts.success("✅ Perfil Salvo!", `"${name}" foi salvo e aparecerá nos seus perfis.`);
+          },
+        },
+      ],
+      "plain-text",
+      "",
+      "default"
+    );
+  }, [result, meatAdults, vegetarianAdults, children, beerDrinkers, duration, selectedMeats, showAd]);
+
+  // Salvar último cálculo para o checklist quando o resultado mudar (automático)
+  useEffect(() => {
+    if (result.participants.total > 0) {
+      const items: LastCalculation["items"] = [];
+      result.sections.forEach((section) => {
+        section.items.forEach((item) => {
+          items.push({
+            key: item.key,
+            label: item.label,
+            quantity: formatQuantity(item.quantity, item.format),
+            price: item.price || 0,
+            section: section.title,
+          });
+        });
+      });
+      saveLastCalculation({
+        items,
+        totalCost: result.totals.totalCost,
+        date: new Date().toISOString(),
+      });
+    }
+  }, [result]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -665,6 +898,13 @@ export default function ChurrascometroScreen() {
           <FontAwesome name="fire" size={40} color={colors.primary} />
           <Text style={styles.title}>Churrascômetro</Text>
           <Text style={styles.subtitle}>Calcule as quantidades ideais para o seu churrasco</Text>
+        </View>
+
+        {/* Perfis de Churrasco */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⚡ Início Rápido</Text>
+          <Text style={styles.sectionSubtitle}>Toque para aplicar um perfil</Text>
+          <ProfileSelector onSelectProfile={applyProfile} customProfiles={customProfiles} />
         </View>
 
         {/* Banner Premium no Topo */}
@@ -763,6 +1003,7 @@ export default function ChurrascometroScreen() {
           <View style={styles.card}>
             <SummaryGrid
               participants={result.participants.total}
+              adults={result.participants.adults}
               totalMeat={result.totals.totalMeat}
               totalBeer={result.totals.totalBeer}
               totalSoda={result.totals.totalSoda}
@@ -778,6 +1019,29 @@ export default function ChurrascometroScreen() {
           {result.sections.map((section) => (
             <ResultCard key={section.title} section={section} />
           ))}
+
+          {/* Botões de Ação */}
+          <View style={styles.actionButtonsContainer}>
+            {/* Botão Salvar Churrasco */}
+            <TouchableOpacity
+              style={styles.saveChurrascoButton}
+              onPress={handleSaveChurrasco}
+              activeOpacity={0.8}
+            >
+              <FontAwesome name="shopping-cart" size={20} color="#FFFFFF" />
+              <Text style={styles.saveButtonText}>Criar Checklist</Text>
+            </TouchableOpacity>
+
+            {/* Botão Salvar Perfil */}
+            <TouchableOpacity
+              style={styles.saveProfileButton}
+              onPress={handleSaveAsProfile}
+              activeOpacity={0.8}
+            >
+              <FontAwesome name="star" size={20} color={colors.secondary} />
+              <Text style={styles.saveProfileButtonText}>Salvar Perfil</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Botão de Compartilhar */}
           <TouchableOpacity style={styles.shareButton} onPress={handleShare} activeOpacity={0.8}>
@@ -1122,6 +1386,118 @@ const styles = StyleSheet.create({
     color: colors.success,
     marginTop: spacing.xs,
   },
+  summaryItemPerPerson: {
+    backgroundColor: `${colors.secondary}20`,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderStyle: "dashed",
+  },
+  summaryValuePerPerson: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.secondary,
+    marginTop: spacing.xs,
+  },
+
+  // Profile selector styles
+  profileSelectorContainer: {
+    marginTop: spacing.sm,
+  },
+  profileScrollContent: {
+    paddingHorizontal: spacing.xs,
+    gap: spacing.sm,
+  },
+  profileCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 120,
+    borderWidth: 1,
+    borderColor: colors.border,
+    position: "relative",
+  },
+  profileCardCustom: {
+    borderColor: colors.secondary,
+    backgroundColor: `${colors.secondary}10`,
+  },
+  profileIcon: {
+    fontSize: 32,
+    marginBottom: spacing.xs,
+  },
+  profileName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+    textAlign: "center",
+  },
+  profileDescription: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 2,
+  },
+  customBadge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: colors.secondary,
+    borderRadius: borderRadius.round,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  customBadgeText: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+
+  // Action buttons styles
+  actionButtonsContainer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  saveChurrascoButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  saveProfileButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+  },
+  saveProfileButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.secondary,
+  },
 
   // Share button styles
   shareButton: {
@@ -1132,7 +1508,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.lg,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
