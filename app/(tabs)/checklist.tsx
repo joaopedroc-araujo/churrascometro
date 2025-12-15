@@ -4,7 +4,9 @@ import {
   clearChecklist,
   getChecklist,
   getLastCalculation,
+  LastCalculation,
   saveChecklist,
+  saveLastCalculation,
 } from "@/services/storage-service";
 import { alerts, haptics } from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -30,6 +32,50 @@ interface ChecklistItem {
   checked: boolean;
 }
 
+// Mapeamento de itens para corredores do mercado
+const MARKET_AISLES: Record<string, string> = {
+  // Carnes
+  picanha: "🥩 Açougue",
+  costela: "🥩 Açougue",
+  linguica: "🥩 Açougue",
+  frango: "🥩 Açougue",
+  maminha: "🥩 Açougue",
+  fraldinha: "🥩 Açougue",
+  // Vegetarianos
+  queijo_coalho: "🧀 Frios/Laticínios",
+  abacaxi: "🥬 Hortifruti",
+  cogumelos: "🥬 Hortifruti",
+  legumes: "🥬 Hortifruti",
+  // Acompanhamentos
+  arroz: "🛒 Mercearia",
+  farofa: "🛒 Mercearia",
+  vinagrete: "🥬 Hortifruti",
+  pao_alho: "🍞 Padaria",
+  // Bebidas
+  cerveja: "🍺 Bebidas",
+  refrigerante: "🍺 Bebidas",
+  agua: "🍺 Bebidas",
+  suco: "🍺 Bebidas",
+  // Extras
+  carvao: "🔥 Carvão/Churrasco",
+  sal_grosso: "🛒 Mercearia",
+  gelo: "❄️ Gelo",
+};
+
+// Ordem dos corredores no mercado
+const AISLE_ORDER = [
+  "🥬 Hortifruti",
+  "🥩 Açougue",
+  "🧀 Frios/Laticínios",
+  "🍞 Padaria",
+  "🛒 Mercearia",
+  "🍺 Bebidas",
+  "🔥 Carvão/Churrasco",
+  "❄️ Gelo",
+];
+
+type ViewMode = "recipe" | "market";
+
 export default function ChecklistScreen() {
   const { showAd } = useInterstitialAd();
 
@@ -38,6 +84,7 @@ export default function ChecklistScreen() {
   const [totalCost, setTotalCost] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("recipe");
 
   const loadData = useCallback(async () => {
     try {
@@ -100,6 +147,49 @@ export default function ChecklistScreen() {
     });
   }, []);
 
+  const deleteItem = useCallback(
+    async (key: string) => {
+      haptics.medium();
+
+      // Remove o item da lista
+      const updatedItems = items.filter((item) => item.key !== key);
+      setItems(updatedItems);
+
+      // Remove do checkedItems
+      const newChecked = { ...checkedItems };
+      delete newChecked[key];
+      setCheckedItems(newChecked);
+
+      // Recalcula o total
+      const newTotalCost = updatedItems.reduce((sum, item) => sum + item.price, 0);
+      setTotalCost(newTotalCost);
+
+      // Salva no storage
+      await saveChecklist(newChecked);
+
+      // Atualiza o LastCalculation com os novos itens
+      const updatedCalculation: LastCalculation = {
+        items: updatedItems.map(({ checked, ...rest }) => rest),
+        totalCost: newTotalCost,
+        date: new Date().toISOString(),
+      };
+      await saveLastCalculation(updatedCalculation);
+    },
+    [items, checkedItems]
+  );
+
+  const confirmDeleteItem = useCallback(
+    (item: ChecklistItem) => {
+      alerts.confirm(
+        "Remover item?",
+        `Deseja remover "${item.label}" da lista?`,
+        "Remover",
+        () => deleteItem(item.key)
+      );
+    },
+    [deleteItem]
+  );
+
   const handleShare = useCallback(async () => {
     haptics.medium();
 
@@ -132,8 +222,8 @@ export default function ChecklistScreen() {
     .filter((item) => !item.checked)
     .reduce((sum, item) => sum + item.price, 0);
 
-  // Agrupa itens por seção
-  const groupedItems = items.reduce(
+  // Agrupa itens por seção (modo receita)
+  const groupedBySection = items.reduce(
     (acc, item) => {
       if (!acc[item.section]) {
         acc[item.section] = [];
@@ -143,6 +233,40 @@ export default function ChecklistScreen() {
     },
     {} as Record<string, ChecklistItem[]>
   );
+
+  // Agrupa itens por corredor do mercado
+  const groupedByAisle = items.reduce(
+    (acc, item) => {
+      const aisle = MARKET_AISLES[item.key] || "🛒 Outros";
+      if (!acc[aisle]) {
+        acc[aisle] = [];
+      }
+      acc[aisle].push(item);
+      return acc;
+    },
+    {} as Record<string, ChecklistItem[]>
+  );
+
+  // Ordena os corredores na ordem do mercado
+  const sortedAisles = Object.entries(groupedByAisle).sort((a, b) => {
+    const indexA = AISLE_ORDER.indexOf(a[0]);
+    const indexB = AISLE_ORDER.indexOf(b[0]);
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
+  // Escolhe qual agrupamento usar baseado no modo
+  const groupedItems =
+    viewMode === "market"
+      ? Object.fromEntries(sortedAisles)
+      : groupedBySection;
+
+  const toggleViewMode = useCallback(() => {
+    haptics.light();
+    setViewMode((prev) => (prev === "recipe" ? "market" : "recipe"));
+  }, []);
 
   if (loading) {
     return (
@@ -199,6 +323,52 @@ export default function ChecklistScreen() {
               <Text style={styles.statValueSmall}>R$ {totalCost.toFixed(2).replace(".", ",")}</Text>
             </View>
           </View>
+
+          {/* Toggle de visualização */}
+          <View style={styles.viewModeContainer}>
+            <TouchableOpacity
+              style={[styles.viewModeButton, viewMode === "recipe" && styles.viewModeButtonActive]}
+              onPress={() => {
+                haptics.light();
+                setViewMode("recipe");
+              }}
+            >
+              <FontAwesome
+                name="cutlery"
+                size={14}
+                color={viewMode === "recipe" ? colors.white : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.viewModeText,
+                  viewMode === "recipe" && styles.viewModeTextActive,
+                ]}
+              >
+                Receita
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewModeButton, viewMode === "market" && styles.viewModeButtonActive]}
+              onPress={() => {
+                haptics.light();
+                setViewMode("market");
+              }}
+            >
+              <FontAwesome
+                name="shopping-cart"
+                size={14}
+                color={viewMode === "market" ? colors.white : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.viewModeText,
+                  viewMode === "market" && styles.viewModeTextActive,
+                ]}
+              >
+                Mercado
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Lista agrupada por seção */}
@@ -207,32 +377,46 @@ export default function ChecklistScreen() {
             <Text style={styles.sectionTitle}>{section}</Text>
             <View style={styles.card}>
               {sectionItems.map((item, index) => (
-                <TouchableOpacity
+                <View
                   key={item.key}
                   style={[
                     styles.checklistItem,
                     index < sectionItems.length - 1 && styles.checklistItemBorder,
                   ]}
-                  onPress={() => toggleItem(item.key)}
-                  activeOpacity={0.7}
                 >
-                  <FontAwesome
-                    name={item.checked ? "check-square" : "square-o"}
-                    size={24}
-                    color={item.checked ? colors.success : colors.textSecondary}
-                  />
-                  <View style={styles.itemContent}>
-                    <Text style={[styles.itemLabel, item.checked && styles.itemLabelChecked]}>
-                      {item.label}
+                  <TouchableOpacity
+                    style={styles.checkboxArea}
+                    onPress={() => toggleItem(item.key)}
+                    activeOpacity={0.7}
+                  >
+                    <FontAwesome
+                      name={item.checked ? "check-square" : "square-o"}
+                      size={24}
+                      color={item.checked ? colors.success : colors.textSecondary}
+                    />
+                    <View style={styles.itemContent}>
+                      <Text style={[styles.itemLabel, item.checked && styles.itemLabelChecked]}>
+                        {item.label}
+                      </Text>
+                      <Text
+                        style={[styles.itemQuantity, item.checked && styles.itemQuantityChecked]}
+                      >
+                        {item.quantity}
+                      </Text>
+                    </View>
+                    <Text style={[styles.itemPrice, item.checked && styles.itemPriceChecked]}>
+                      R$ {item.price.toFixed(2).replace(".", ",")}
                     </Text>
-                    <Text style={[styles.itemQuantity, item.checked && styles.itemQuantityChecked]}>
-                      {item.quantity}
-                    </Text>
-                  </View>
-                  <Text style={[styles.itemPrice, item.checked && styles.itemPriceChecked]}>
-                    R$ {item.price.toFixed(2).replace(".", ",")}
-                  </Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => confirmDeleteItem(item)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <FontAwesome name="trash-o" size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
@@ -348,6 +532,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  checkboxArea: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteButton: {
+    padding: spacing.sm,
+    marginLeft: spacing.sm,
+  },
   itemContent: {
     flex: 1,
     marginLeft: spacing.md,
@@ -431,6 +624,33 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 24,
+  },
+  viewModeContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 4,
+    marginTop: spacing.md,
+  },
+  viewModeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  viewModeButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  viewModeText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.textSecondary,
+  },
+  viewModeTextActive: {
+    color: colors.white,
   },
   adSpace: {
     height: 60,

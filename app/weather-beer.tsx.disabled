@@ -1,0 +1,701 @@
+import { BottomAdBanner } from "@/components/ads";
+import { borderRadius, colors, spacing } from "@/constants/theme";
+import { alerts } from "@/utils";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import * as Location from "expo-location";
+import { Stack, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Constantes para cálculo de cerveja
+const BASE_BEERS_PER_PERSON = 4; // Base: 4 latas por pessoa em temperatura normal
+const TEMPERATURE_THRESHOLDS = {
+  cold: 20, // Abaixo de 20°C = frio
+  mild: 25, // 20-25°C = ameno
+  warm: 30, // 25-30°C = quente
+  hot: 35, // 30-35°C = muito quente
+  // Acima de 35°C = escaldante
+};
+
+// Multiplicadores baseados na temperatura
+const BEER_MULTIPLIERS: Record<string, { multiplier: number; label: string; icon: string; color: string }> = {
+  cold: { multiplier: 0.7, label: "Friozinho", icon: "snowflake-o", color: "#64B5F6" },
+  mild: { multiplier: 1.0, label: "Ameno", icon: "cloud", color: "#81C784" },
+  warm: { multiplier: 1.3, label: "Quente", icon: "sun-o", color: "#FFB74D" },
+  hot: { multiplier: 1.6, label: "Muito Quente", icon: "fire", color: "#FF8A65" },
+  scorching: { multiplier: 2.0, label: "Escaldante", icon: "free-code-camp", color: "#E57373" },
+};
+
+interface WeatherData {
+  temperature: number;
+  description: string;
+  city: string;
+  humidity: number;
+  feelsLike: number;
+}
+
+export default function WeatherBeerScreen() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [beerDrinkers, setBeerDrinkers] = useState(8);
+
+  const fetchWeather = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Solicita permissão de localização
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setError("Permissão de localização negada. Não podemos verificar o clima da sua região.");
+        setLoading(false);
+        return;
+      }
+
+      // Obtém localização atual
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = location.coords;
+
+      // Usa API gratuita do Open-Meteo (não precisa de API key)
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto`
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao buscar dados do clima");
+      }
+
+      const data = await response.json();
+
+      // Traduz o código do clima para descrição
+      const weatherDescription = getWeatherDescription(data.current.weather_code);
+
+      // Tenta obter nome da cidade via geocoding reverso
+      const cityName = await getCityName(latitude, longitude);
+
+      setWeather({
+        temperature: Math.round(data.current.temperature_2m),
+        description: weatherDescription,
+        city: cityName,
+        humidity: data.current.relative_humidity_2m,
+        feelsLike: Math.round(data.current.apparent_temperature),
+      });
+    } catch (err) {
+      console.error("Erro ao buscar clima:", err);
+      setError("Não foi possível obter os dados do clima. Verifique sua conexão.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWeather();
+  }, [fetchWeather]);
+
+  const getCityName = async (lat: number, lon: number): Promise<string> => {
+    try {
+      const result = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+      if (result.length > 0) {
+        return result[0].city || result[0].subregion || result[0].region || "Sua localização";
+      }
+    } catch {
+      // Silently fail
+    }
+    return "Sua localização";
+  };
+
+  const getWeatherDescription = (code: number): string => {
+    // Códigos WMO
+    const descriptions: Record<number, string> = {
+      0: "Céu limpo",
+      1: "Predominantemente limpo",
+      2: "Parcialmente nublado",
+      3: "Nublado",
+      45: "Neblina",
+      48: "Neblina com gelo",
+      51: "Garoa leve",
+      53: "Garoa moderada",
+      55: "Garoa forte",
+      61: "Chuva leve",
+      63: "Chuva moderada",
+      65: "Chuva forte",
+      71: "Neve leve",
+      73: "Neve moderada",
+      75: "Neve forte",
+      80: "Chuvas leves",
+      81: "Chuvas moderadas",
+      82: "Chuvas violentas",
+      95: "Tempestade",
+      96: "Tempestade com granizo",
+      99: "Tempestade com granizo forte",
+    };
+    return descriptions[code] || "Tempo variável";
+  };
+
+  const getTemperatureCategory = useCallback((temp: number) => {
+    if (temp < TEMPERATURE_THRESHOLDS.cold) {
+      return "cold";
+    }
+    if (temp < TEMPERATURE_THRESHOLDS.mild) {
+      return "mild";
+    }
+    if (temp < TEMPERATURE_THRESHOLDS.warm) {
+      return "warm";
+    }
+    if (temp < TEMPERATURE_THRESHOLDS.hot) {
+      return "hot";
+    }
+    return "scorching";
+  }, []);
+
+  const beerRecommendation = useCallback(() => {
+    if (!weather) {
+      return null;
+    }
+
+    const category = getTemperatureCategory(weather.temperature);
+    const { multiplier, label, icon, color } = BEER_MULTIPLIERS[category];
+
+    const baseBeers = BASE_BEERS_PER_PERSON * beerDrinkers;
+    const recommendedBeers = Math.ceil(baseBeers * multiplier);
+
+    // Calcula quantidades úteis
+    const packs12 = Math.ceil(recommendedBeers / 12);
+    const packs24 = Math.ceil(recommendedBeers / 24);
+    const litersIce = Math.ceil(recommendedBeers / 6); // ~1kg gelo para cada 6 latas
+
+    return {
+      category,
+      label,
+      icon,
+      color,
+      multiplier,
+      baseBeers,
+      recommendedBeers,
+      packs12,
+      packs24,
+      litersIce,
+    };
+  }, [weather, beerDrinkers, getTemperatureCategory]);
+
+  const recommendation = beerRecommendation();
+
+  const handleRefresh = () => {
+    fetchWeather();
+  };
+
+  // Função disponível para uso futuro em botões de aplicação
+  const _handleApplyToCalculator = useCallback(() => {
+    if (!recommendation) {
+      return;
+    }
+
+    alerts.success(
+      "Dica de Cerveja",
+      `Para ${beerDrinkers} pessoas com ${weather?.temperature}°C, sugerimos ${recommendation.recommendedBeers} latas de cerveja!`
+    );
+    router.back();
+  }, [recommendation, beerDrinkers, weather, router]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <Stack.Screen
+          options={{
+            title: "Previsão de Cerveja",
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Consultando o clima...</Text>
+          <Text style={styles.loadingSubtext}>Localizando você para sugerir a quantidade ideal</Text>
+        </View>
+        <BottomAdBanner />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <Stack.Screen
+          options={{
+            title: "Previsão de Cerveja",
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+          }}
+        />
+        <View style={styles.errorContainer}>
+          <FontAwesome name="exclamation-triangle" size={64} color={colors.warning} />
+          <Text style={styles.errorTitle}>Ops!</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <FontAwesome name="refresh" size={18} color={colors.text} />
+            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
+        <BottomAdBanner />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <Stack.Screen
+        options={{
+          title: "Previsão de Cerveja",
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+        }}
+      />
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Weather Card */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.weatherCard}>
+          <View style={styles.weatherHeader}>
+            <View style={styles.weatherLocation}>
+              <FontAwesome name="map-marker" size={16} color={colors.textSecondary} />
+              <Text style={styles.weatherCity}>{weather?.city}</Text>
+            </View>
+            <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
+              <FontAwesome name="refresh" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.temperatureRow}>
+            <Text style={styles.temperature}>{weather?.temperature}°C</Text>
+            {recommendation && (
+              <View style={[styles.categoryBadge, { backgroundColor: recommendation.color }]}>
+                <FontAwesome name={recommendation.icon as any} size={14} color={colors.background} />
+                <Text style={styles.categoryBadgeText}>{recommendation.label}</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.weatherDescription}>{weather?.description}</Text>
+
+          <View style={styles.weatherDetails}>
+            <View style={styles.weatherDetail}>
+              <FontAwesome name="tint" size={14} color={colors.textSecondary} />
+              <Text style={styles.weatherDetailText}>Umidade: {weather?.humidity}%</Text>
+            </View>
+            <View style={styles.weatherDetail}>
+              <FontAwesome name="thermometer-half" size={14} color={colors.textSecondary} />
+              <Text style={styles.weatherDetailText}>Sensação: {weather?.feelsLike}°C</Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Beer Drinkers Input */}
+        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.inputCard}>
+          <Text style={styles.inputLabel}>
+            <FontAwesome name="beer" size={16} /> Quantas pessoas vão beber cerveja?
+          </Text>
+          <View style={styles.counterRow}>
+            <TouchableOpacity
+              style={styles.counterButton}
+              onPress={() => setBeerDrinkers((prev) => Math.max(1, prev - 1))}
+            >
+              <FontAwesome name="minus" size={18} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.counterValue}>{beerDrinkers}</Text>
+            <TouchableOpacity
+              style={styles.counterButton}
+              onPress={() => setBeerDrinkers((prev) => Math.min(50, prev + 1))}
+            >
+              <FontAwesome name="plus" size={18} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* Recommendation Card */}
+        {recommendation && (
+          <Animated.View
+            entering={FadeInUp.delay(200).duration(400)}
+            style={[styles.recommendationCard, { borderColor: recommendation.color }]}
+          >
+            <View style={styles.recommendationHeader}>
+              <FontAwesome name="lightbulb-o" size={24} color={recommendation.color} />
+              <Text style={styles.recommendationTitle}>Nossa Sugestão</Text>
+            </View>
+
+            <Text style={styles.recommendationExplanation}>
+              Com {recommendation.label.toLowerCase()} ({weather?.temperature}°C),
+              o consumo de cerveja {recommendation.multiplier > 1 ? "aumenta" : recommendation.multiplier < 1 ? "diminui" : "se mantém"}{" "}
+              {recommendation.multiplier !== 1 && `em ${Math.abs((recommendation.multiplier - 1) * 100).toFixed(0)}%`}!
+            </Text>
+
+            <View style={styles.recommendationStats}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{recommendation.recommendedBeers}</Text>
+                <Text style={styles.statLabel}>latas</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{recommendation.packs12}</Text>
+                <Text style={styles.statLabel}>pack 12</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{recommendation.packs24}</Text>
+                <Text style={styles.statLabel}>caixa 24</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{recommendation.litersIce}</Text>
+                <Text style={styles.statLabel}>kg gelo</Text>
+              </View>
+            </View>
+
+            <View style={styles.formulaBox}>
+              <Text style={styles.formulaTitle}>Como calculamos:</Text>
+              <Text style={styles.formulaText}>
+                Base: {BASE_BEERS_PER_PERSON} latas × {beerDrinkers} pessoas = {recommendation.baseBeers} latas
+              </Text>
+              <Text style={styles.formulaText}>
+                Ajuste clima ({recommendation.label}): × {recommendation.multiplier.toFixed(1)}
+              </Text>
+              <Text style={styles.formulaResult}>
+                = {recommendation.recommendedBeers} latas recomendadas
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Tip Card */}
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.tipCard}>
+          <FontAwesome name="info-circle" size={18} color={colors.secondary} />
+          <Text style={styles.tipText}>
+            A sugestão considera a temperatura atual. Em dias mais quentes, as pessoas tendem a
+            consumir mais cerveja. Lembre-se também de oferecer água e outras bebidas!
+          </Text>
+        </Animated.View>
+
+        {/* Temperature Scale */}
+        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.scaleCard}>
+          <Text style={styles.scaleTitle}>
+            <FontAwesome name="thermometer" size={16} /> Escala de Consumo
+          </Text>
+          {Object.entries(BEER_MULTIPLIERS).map(([key, value]) => {
+            const isActive = recommendation?.category === key;
+            return (
+              <View
+                key={key}
+                style={[styles.scaleRow, isActive && { backgroundColor: `${value.color}20` }]}
+              >
+                <View style={[styles.scaleIcon, { backgroundColor: value.color }]}>
+                  <FontAwesome name={value.icon as any} size={12} color={colors.background} />
+                </View>
+                <Text style={[styles.scaleLabel, isActive && styles.scaleLabelActive]}>
+                  {value.label}
+                </Text>
+                <Text style={styles.scaleMultiplier}>×{value.multiplier.toFixed(1)}</Text>
+              </View>
+            );
+          })}
+        </Animated.View>
+      </ScrollView>
+
+      <BottomAdBanner />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  loadingText: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: spacing.lg,
+  },
+  loadingSubtext: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginTop: spacing.sm,
+    textAlign: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  errorText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+  },
+  retryButtonText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  weatherCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  weatherHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  weatherLocation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  weatherCity: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  refreshButton: {
+    padding: spacing.sm,
+  },
+  temperatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  temperature: {
+    color: colors.text,
+    fontSize: 48,
+    fontWeight: "bold",
+  },
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.md,
+  },
+  categoryBadgeText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  weatherDescription: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    marginBottom: spacing.md,
+  },
+  weatherDetails: {
+    flexDirection: "row",
+    gap: spacing.lg,
+  },
+  weatherDetail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  weatherDetailText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  inputCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  inputLabel: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: spacing.md,
+  },
+  counterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.lg,
+  },
+  counterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  counterValue: {
+    color: colors.text,
+    fontSize: 32,
+    fontWeight: "bold",
+    minWidth: 60,
+    textAlign: "center",
+  },
+  recommendationCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 2,
+  },
+  recommendationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  recommendationTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  recommendationExplanation: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  recommendationStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  statCard: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statValue: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  statLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  formulaBox: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  formulaTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: spacing.xs,
+  },
+  formulaText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  formulaResult: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: "bold",
+    marginTop: spacing.xs,
+  },
+  tipCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  tipText: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  scaleCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
+  scaleTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: spacing.md,
+  },
+  scaleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.xs,
+  },
+  scaleIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.sm,
+  },
+  scaleLabel: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  scaleLabelActive: {
+    color: colors.text,
+    fontWeight: "600",
+  },
+  scaleMultiplier: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});

@@ -41,6 +41,17 @@ export interface SavedChurrasco {
   totalCost: number;
 }
 
+export interface StorePrice {
+  [itemKey: string]: number;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  prices: StorePrice;
+  createdAt: string;
+}
+
 // ============ KEYS ============
 
 const KEYS = {
@@ -49,6 +60,7 @@ const KEYS = {
   CHECKLIST: "@churrascometro:checklist",
   SAVED_CHURRASCOS: "@churrascometro:saved_churrascos",
   LAST_CALCULATION: "@churrascometro:last_calculation",
+  STORES: "@churrascometro:stores",
 };
 
 // ============ ITENS CUSTOMIZADOS ============
@@ -374,5 +386,51 @@ export async function deleteCustomProfile(id: string): Promise<void> {
     await AsyncStorage.setItem(KEYS_CUSTOM_PROFILES, JSON.stringify(filtered));
   } catch (error) {
     console.error("Erro ao deletar perfil:", error);
+  }
+}
+
+// ============ MERCADOS (COMPARADOR DE PREÇOS) ============
+
+export async function getStores(): Promise<Store[]> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.STORES);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveStore(store: Store): Promise<void> {
+  try {
+    const stores = await getStores();
+    const existingIndex = stores.findIndex((s) => s.id === store.id);
+    if (existingIndex >= 0) {
+      stores[existingIndex] = store;
+    } else {
+      stores.push(store);
+    }
+    // Limita a 10 mercados
+    const limited = stores.slice(0, 10);
+    await AsyncStorage.setItem(KEYS.STORES, JSON.stringify(limited));
+  } catch (error) {
+    console.error("Erro ao salvar mercado:", error);
+  }
+}
+
+export async function deleteStore(id: string): Promise<void> {
+  try {
+    const stores = await getStores();
+    const filtered = stores.filter((s) => s.id !== id);
+    await AsyncStorage.setItem(KEYS.STORES, JSON.stringify(filtered));
+  } catch (error) {
+    console.error("Erro ao deletar mercado:", error);
+  }
+}
+
+export async function clearStores(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KEYS.STORES);
+  } catch (error) {
+    console.error("Erro ao limpar mercados:", error);
   }
 }

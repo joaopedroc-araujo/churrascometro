@@ -8,6 +8,7 @@ import {
   getCustomPrices,
   getCustomProfiles,
   LastCalculation,
+  saveChurrasco,
   saveCustomProfile,
   saveLastCalculation,
 } from "@/services/storage-service";
@@ -158,9 +159,9 @@ const DRINK_ITEMS: ItemDefinition[] = [
 ];
 
 const EXTRAS: ItemDefinition[] = [
-  { key: "carvao", label: "Carvão", perAdult: 1, format: "kg", pricePerUnit: 25.0 },
+  { key: "carvao", label: "Carvão", perAdult: 0, format: "kg", pricePerUnit: 8.0 },
   { key: "sal_grosso", label: "Sal Grosso", perAdult: 0.1, format: "kg", pricePerUnit: 4.0 },
-  { key: "gelo", label: "Gelo", perAdult: 1, format: "kg", pricePerUnit: 8.0 },
+  { key: "gelo", label: "Gelo", perAdult: 0, format: "bag", pricePerUnit: 15.0 },
 ];
 
 // ============ DURAÇÕES ============
@@ -595,17 +596,36 @@ const ResultCard = memo(function ResultCard({ section }: ResultCardProps) {
     return iconMap[icon] || "circle";
   };
 
+  // Calcular subtotal da seção
+  const sectionSubtotal = section.items.reduce((sum, item) => sum + (item.price || 0), 0);
+
   return (
     <View style={styles.resultCard}>
       <View style={styles.resultCardHeader}>
-        <FontAwesome name={getIconName(section.icon)} size={20} color={colors.secondary} />
-        <Text style={styles.resultCardTitle}>{section.title}</Text>
+        <View style={styles.resultCardHeaderLeft}>
+          <FontAwesome name={getIconName(section.icon)} size={20} color={colors.secondary} />
+          <Text style={styles.resultCardTitle}>{section.title}</Text>
+        </View>
+        {sectionSubtotal > 0 && (
+          <Text style={styles.resultCardSubtotal}>
+            R$ {sectionSubtotal.toFixed(2).replace(".", ",")}
+          </Text>
+        )}
       </View>
       <View style={styles.resultCardItems}>
         {section.items.map((item) => (
           <View key={item.key} style={styles.resultItem}>
             <Text style={styles.resultItemLabel}>{item.label}</Text>
-            <Text style={styles.resultItemValue}>{formatQuantity(item.quantity, item.format)}</Text>
+            <View style={styles.resultItemRight}>
+              <Text style={styles.resultItemValue}>
+                {formatQuantity(item.quantity, item.format)}
+              </Text>
+              {item.price && item.price > 0 && (
+                <Text style={styles.resultItemPrice}>
+                  R$ {item.price.toFixed(2).replace(".", ",")}
+                </Text>
+              )}
+            </View>
           </View>
         ))}
       </View>
@@ -743,17 +763,17 @@ export default function ChurrascometroScreen() {
     // Calcular acompanhamentos (para todos) - apenas se habilitado
     const sideItems: CalculatedItem[] = includeSides
       ? SIDE_ITEMS.map((item) => {
-          const quantity =
-            (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
-          const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
-          return {
-            key: item.key,
-            label: item.label,
-            quantity,
-            format: item.format,
-            price,
-          };
-        })
+        const quantity =
+          (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
+        const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
+        return {
+          key: item.key,
+          label: item.label,
+          quantity,
+          format: item.format,
+          price,
+        };
+      })
       : [];
 
     // Calcular bebidas
@@ -781,11 +801,17 @@ export default function ChurrascometroScreen() {
     const extraItems: CalculatedItem[] = EXTRAS.map((item) => {
       let quantity = 0;
       if (item.key === "carvao") {
-        quantity = Math.max(2, totalMeatEaters * 0.5) * multiplier;
+        // 0.3 kg por adulto carnívoro + 0.15 kg por criança; min 1.5 kg; mult 1.15 para evento longo
+        const charcoalMultiplier = duration === "long" ? 1.15 : 1;
+        const baseKg = meatAdults * 0.3 + children * 0.15;
+        quantity = Math.max(1.5, baseKg) * charcoalMultiplier;
       } else if (item.key === "sal_grosso") {
         quantity = Math.max(0.5, totalMeatEaters * 0.1) * multiplier;
       } else if (item.key === "gelo") {
-        quantity = totalParticipants * 1 * multiplier;
+        // 1 saco (5 kg) para cada ~20 pessoas (curto) ou ~15 pessoas (longo)
+        const peoplePerBag = duration === "long" ? 15 : 20;
+        const bags = Math.ceil(totalParticipants / peoplePerBag);
+        quantity = bags; // em sacos
       }
       const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
       return {
@@ -957,30 +983,45 @@ export default function ChurrascometroScreen() {
 
             haptics.success();
 
+            const profileConfig = {
+              meatAdults,
+              vegetarianAdults,
+              children,
+              beerDrinkers,
+              duration,
+              selectedMeats,
+            };
+
             const profile: ChurrascoProfile = {
               id: `custom-${Date.now()}`,
               name: name.trim(),
               icon: "⭐",
               description: `${result.participants.total} pessoas`,
-              config: {
-                meatAdults,
-                vegetarianAdults,
-                children,
-                beerDrinkers,
-                duration,
-                selectedMeats,
-              },
+              config: profileConfig,
             };
 
+            // Salvar como perfil reutilizável
             await saveCustomProfile(profile);
             setCustomProfiles((prev) =>
               [profile, ...prev.filter((p) => p.id !== profile.id)].slice(0, 5)
             );
 
+            // Salvar no histórico também
+            await saveChurrasco({
+              id: `churrasco-${Date.now()}`,
+              name: name.trim(),
+              date: new Date().toISOString(),
+              config: profileConfig,
+              totalCost: result.totals.totalCost,
+            });
+
             // Mostrar anúncio intersticial
             showAd();
 
-            alerts.success("✅ Perfil Salvo!", `"${name}" foi salvo e aparecerá nos seus perfis.`);
+            alerts.success(
+              "✅ Perfil Salvo!",
+              `"${name}" foi salvo nos seus perfis e no histórico.`
+            );
           },
         },
       ],
@@ -1038,6 +1079,51 @@ export default function ChurrascometroScreen() {
           <Text style={styles.sectionTitle}>⚡ Início Rápido</Text>
           <Text style={styles.sectionSubtitle}>Toque para aplicar um perfil</Text>
           <ProfileSelector onSelectProfile={applyProfile} customProfiles={customProfiles} />
+
+          {/* Botão Calculadora Reversa */}
+          <TouchableOpacity
+            style={styles.reverseCalculatorButton}
+            onPress={() => router.push("/reverse-calculator")}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="calculator" size={18} color={colors.secondary} />
+            <Text style={styles.reverseCalculatorText}>
+              Tenho um orçamento, quantas pessoas cabem?
+            </Text>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Botão Comparador de Preços */}
+          <TouchableOpacity
+            style={styles.priceComparatorButton}
+            onPress={() => router.push("/price-comparator")}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="balance-scale" size={18} color={colors.success} />
+            <Text style={styles.priceComparatorText}>
+              Comparar preços entre mercados
+            </Text>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* 
+           * TODO: FEATURE DESATIVADA TEMPORARIAMENTE
+           * Reativar após adicionar declaração de localização na Play Store
+           * 
+           * Botão Previsão de Cerveja (usa GPS/localização)
+           * 
+          <TouchableOpacity
+            style={styles.weatherBeerButton}
+            onPress={() => router.push("/weather-beer")}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="beer" size={18} color={colors.warning} />
+            <Text style={styles.weatherBeerText}>
+              Quanta cerveja levar? (baseado no clima)
+            </Text>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+          */}
         </View>
 
         {/* Banner Premium no Topo */}
@@ -1363,16 +1449,26 @@ const styles = StyleSheet.create({
   resultCardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.sm,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  resultCardHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   resultCardTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
     marginLeft: spacing.sm,
+  },
+  resultCardSubtotal: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: colors.success,
   },
   resultCardItems: {},
   resultItem: {
@@ -1384,11 +1480,25 @@ const styles = StyleSheet.create({
   resultItemLabel: {
     fontSize: 14,
     color: colors.text,
+    flex: 1,
+  },
+  resultItemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   resultItemValue: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.secondary,
+    minWidth: 70,
+    textAlign: "right",
+  },
+  resultItemPrice: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    minWidth: 65,
+    textAlign: "right",
   },
 
   // Footer styles
@@ -1472,6 +1582,68 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: -spacing.xs,
   },
+
+  // Reverse calculator button
+  reverseCalculatorButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: "dashed",
+  },
+  reverseCalculatorText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+  },
+
+  // Price comparator button
+  priceComparatorButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: "dashed",
+  },
+  priceComparatorText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+  },
+
+  /*
+   * TODO: ESTILOS DESATIVADOS TEMPORARIAMENTE
+   * Reativar junto com a feature de clima/cerveja
+   *
+  // Weather beer button
+  weatherBeerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: "dashed",
+  },
+  weatherBeerText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+  },
+  */
 
   // Meat selector styles
   meatSelectorContainer: {

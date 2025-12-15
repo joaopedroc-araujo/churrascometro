@@ -10,7 +10,6 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
       "backgroundColor": "#1A1A2E"
     },
     "ios": {
@@ -21,6 +20,7 @@
       },
       "splash": {
         "image": "./assets/images/splash-icon.png",
+        "resizeMode": "cover",
         "backgroundColor": "#1A1A2E"
       }
     },
@@ -62,8 +62,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "adMobBannerUnitId": "ca-app-pub-3940256099942544/6300978111",
-      "adMobInterstitialUnitId": "ca-app-pub-3940256099942544/1033173712",
+      "adMobBannerUnitId": "ca-app-pub-2580199539229846/9354223752",
+      "adMobInterstitialUnitId": "ca-app-pub-2580199539229846/1808842390",
       "iapProductId": "churrascometro_premium_lifetime",
       "eas": {
         "projectId": "4145fcfe-ffcc-4a72-b4e3-12726a2b7ff4"
@@ -75,7 +75,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/your-project-id"
+      "url": "https://u.expo.dev/4145fcfe-ffcc-4a72-b4e3-12726a2b7ff4"
     }
   }
 }

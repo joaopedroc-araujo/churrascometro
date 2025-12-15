@@ -47,6 +47,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="history"
+        options={{
+          title: "Histórico",
+          tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Preços",
