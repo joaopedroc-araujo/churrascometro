@@ -227,7 +227,7 @@ export default function ReverseCalculatorScreen() {
                     size={20}
                     color={includeVegetarians ? colors.success : colors.textSecondary}
                   />
-                  <Text style={styles.optionLabel}>Incluir vegetarianos (~{vegetarianPercent}%)</Text>
+                  <Text style={styles.optionLabel}>Incluir vegetarianos</Text>
                 </View>
                 <FontAwesome
                   name={includeVegetarians ? "toggle-on" : "toggle-off"}
@@ -235,6 +235,38 @@ export default function ReverseCalculatorScreen() {
                   color={includeVegetarians ? colors.primary : colors.textSecondary}
                 />
               </TouchableOpacity>
+
+              {/* Slider para % de vegetarianos */}
+              {includeVegetarians && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.sliderLabel}>Porcentagem de vegetarianos: {vegetarianPercent}%</Text>
+                  <View style={styles.sliderRow}>
+                    <TouchableOpacity
+                      style={styles.sliderButton}
+                      onPress={() => {
+                        haptics.light();
+                        setVegetarianPercent((prev) => Math.max(5, prev - 5));
+                      }}
+                    >
+                      <FontAwesome name="minus" size={14} color={colors.text} />
+                    </TouchableOpacity>
+                    <View style={styles.sliderTrack}>
+                      <View
+                        style={[styles.sliderFill, { width: `${vegetarianPercent}%` }]}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      style={styles.sliderButton}
+                      onPress={() => {
+                        haptics.light();
+                        setVegetarianPercent((prev) => Math.min(50, prev + 5));
+                      }}
+                    >
+                      <FontAwesome name="plus" size={14} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               <TouchableOpacity
                 style={styles.optionRow}
@@ -249,7 +281,7 @@ export default function ReverseCalculatorScreen() {
                     size={20}
                     color={includeChildren ? colors.secondary : colors.textSecondary}
                   />
-                  <Text style={styles.optionLabel}>Incluir crianças (~{childrenPercent}%)</Text>
+                  <Text style={styles.optionLabel}>Incluir crianças</Text>
                 </View>
                 <FontAwesome
                   name={includeChildren ? "toggle-on" : "toggle-off"}
@@ -257,6 +289,38 @@ export default function ReverseCalculatorScreen() {
                   color={includeChildren ? colors.primary : colors.textSecondary}
                 />
               </TouchableOpacity>
+
+              {/* Slider para % de crianças */}
+              {includeChildren && (
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.sliderLabel}>Porcentagem de crianças: {childrenPercent}%</Text>
+                  <View style={styles.sliderRow}>
+                    <TouchableOpacity
+                      style={styles.sliderButton}
+                      onPress={() => {
+                        haptics.light();
+                        setChildrenPercent((prev) => Math.max(5, prev - 5));
+                      }}
+                    >
+                      <FontAwesome name="minus" size={14} color={colors.text} />
+                    </TouchableOpacity>
+                    <View style={styles.sliderTrack}>
+                      <View
+                        style={[styles.sliderFill, { width: `${childrenPercent}%` }]}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      style={styles.sliderButton}
+                      onPress={() => {
+                        haptics.light();
+                        setChildrenPercent((prev) => Math.min(50, prev + 5));
+                      }}
+                    >
+                      <FontAwesome name="plus" size={14} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
 
@@ -525,5 +589,44 @@ const styles = StyleSheet.create({
   },
   adSpace: {
     height: 80,
+  },
+  // Slider styles
+  sliderContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: -spacing.xs,
+  },
+  sliderLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sliderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sliderButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sliderTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  sliderFill: {
+    height: "100%",
+    backgroundColor: colors.success,
+    borderRadius: 4,
   },
 });

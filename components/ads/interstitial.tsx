@@ -62,7 +62,7 @@ export function useInterstitialAd() {
     const loadedListener = interstitial.addAdEventListener(AdEventType.LOADED, () => {
       setIsLoaded(true);
     });
-
+    ''
     // Listener para quando o anúncio fechar
     const closedListener = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
       setIsClosed(true);

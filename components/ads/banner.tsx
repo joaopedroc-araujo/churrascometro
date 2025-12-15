@@ -1,7 +1,7 @@
 import { usePremium } from "@/contexts/premium-context";
 import Constants from "expo-constants";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 
 // Verificar se o módulo nativo está disponível
 let BannerAd: any = null;
@@ -90,13 +90,13 @@ export function BottomAdBanner() {
 
   // Se os anúncios não estiverem disponíveis, mostrar placeholder em dev
   if (!isAdsAvailable) {
-    // if (__DEV__) {
-    //   return (
-    //     <View style={[styles.bottomContainer, styles.placeholder]}>
-    //       <Text style={styles.placeholderText}>📢 Anúncio (Dev Build necessário)</Text>
-    //     </View>
-    //   );
-    // }
+    if (__DEV__) {
+      return (
+        <View style={[styles.bottomContainer, styles.placeholder]}>
+          <Text style={styles.placeholderText}>📢 Anúncio (Dev Build necessário)</Text>
+        </View>
+      );
+    }
     return null;
   }
 
