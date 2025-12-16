@@ -108,7 +108,7 @@ Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos so
 
 Se você tiver dúvidas sobre esta Política de Privacidade, entre em contato:
 
-**Email:** [seu-email@exemplo.com]
+**Email:** [costaaraujojoaopedro@gmail.com](mailto:costaaraujojoaopedro@gmail.com)
 
 ---
 
