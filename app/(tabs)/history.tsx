@@ -1,28 +1,13 @@
 import { BottomAdBanner } from "@/components/ads";
 import { borderRadius, colors, spacing } from "@/constants/theme";
-import {
-  deleteChurrasco,
-  getSavedChurrascos,
-  SavedChurrasco,
-} from "@/services/storage-service";
+import { deleteChurrasco, getSavedChurrascos, SavedChurrasco } from "@/services/storage-service";
 import { alerts, haptics } from "@/utils";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  Layout,
-} from "react-native-reanimated";
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatDate(dateString: string): string {
@@ -47,8 +32,7 @@ interface HistoryCardProps {
 
 function HistoryCard({ churrasco, onDelete }: HistoryCardProps) {
   const config = churrasco.config;
-  const totalPeople =
-    config.meatAdults + config.vegetarianAdults + config.children;
+  const totalPeople = config.meatAdults + config.vegetarianAdults + config.children;
 
   const handleDelete = useCallback(() => {
     haptics.medium();
@@ -108,19 +92,13 @@ function HistoryCard({ churrasco, onDelete }: HistoryCardProps) {
 
         <View style={styles.cardFooter}>
           <View style={styles.durationBadge}>
-            <FontAwesome
-              name="clock-o"
-              size={12}
-              color={colors.textSecondary}
-            />
+            <FontAwesome name="clock-o" size={12} color={colors.textSecondary} />
             <Text style={styles.durationText}>
               {config.duration === "long" ? "Longo" : "Curto"}
             </Text>
           </View>
 
-          <Text style={styles.totalCost}>
-            {formatCurrency(churrasco.totalCost)}
-          </Text>
+          <Text style={styles.totalCost}>{formatCurrency(churrasco.totalCost)}</Text>
         </View>
       </View>
     </Animated.View>
@@ -155,14 +133,11 @@ export default function HistoryScreen() {
     loadData();
   }, [loadData]);
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      haptics.success();
-      await deleteChurrasco(id);
-      setChurrascos((prev) => prev.filter((c) => c.id !== id));
-    },
-    []
-  );
+  const handleDelete = useCallback(async (id: string) => {
+    haptics.success();
+    await deleteChurrasco(id);
+    setChurrascos((prev) => prev.filter((c) => c.id !== id));
+  }, []);
 
   const clearAllHistory = useCallback(() => {
     if (churrascos.length === 0) {
@@ -197,11 +172,7 @@ export default function HistoryScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
-          <FontAwesome
-            name="history"
-            size={64}
-            color={colors.textSecondary}
-          />
+          <FontAwesome name="history" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Nenhum histórico</Text>
           <Text style={styles.emptyText}>
             Seus churrascos salvos aparecerão aqui.{"\n"}
@@ -219,17 +190,14 @@ export default function HistoryScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Header */}
         <View style={styles.header}>
           <FontAwesome name="history" size={40} color={colors.secondary} />
           <Text style={styles.title}>Histórico</Text>
           <Text style={styles.subtitle}>
-            {churrascos.length}{" "}
-            {churrascos.length === 1 ? "churrasco salvo" : "churrascos salvos"}
+            {churrascos.length} {churrascos.length === 1 ? "churrasco salvo" : "churrascos salvos"}
           </Text>
         </View>
 
@@ -251,11 +219,7 @@ export default function HistoryScreen() {
             onPress={clearAllHistory}
             activeOpacity={0.7}
           >
-            <FontAwesome
-              name="trash"
-              size={16}
-              color={colors.textSecondary}
-            />
+            <FontAwesome name="trash" size={16} color={colors.textSecondary} />
             <Text style={styles.clearButtonText}>Limpar Histórico</Text>
           </TouchableOpacity>
         )}

@@ -169,7 +169,7 @@ export default function ChecklistScreen() {
 
       // Atualiza o LastCalculation com os novos itens
       const updatedCalculation: LastCalculation = {
-        items: updatedItems.map(({ checked, ...rest }) => rest),
+        items: updatedItems.map(({ checked: _checked, ...rest }) => rest),
         totalCost: newTotalCost,
         date: new Date().toISOString(),
       };
@@ -180,11 +180,8 @@ export default function ChecklistScreen() {
 
   const confirmDeleteItem = useCallback(
     (item: ChecklistItem) => {
-      alerts.confirm(
-        "Remover item?",
-        `Deseja remover "${item.label}" da lista?`,
-        "Remover",
-        () => deleteItem(item.key)
+      alerts.confirm("Remover item?", `Deseja remover "${item.label}" da lista?`, "Remover", () =>
+        deleteItem(item.key)
       );
     },
     [deleteItem]
@@ -251,22 +248,19 @@ export default function ChecklistScreen() {
   const sortedAisles = Object.entries(groupedByAisle).sort((a, b) => {
     const indexA = AISLE_ORDER.indexOf(a[0]);
     const indexB = AISLE_ORDER.indexOf(b[0]);
-    if (indexA === -1 && indexB === -1) return 0;
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
+    if (indexA === -1 && indexB === -1) { return 0; }
+    if (indexA === -1) { return 1; }
+    if (indexB === -1) { return -1; }
     return indexA - indexB;
   });
 
   // Escolhe qual agrupamento usar baseado no modo
-  const groupedItems =
-    viewMode === "market"
-      ? Object.fromEntries(sortedAisles)
-      : groupedBySection;
+  const groupedItems = viewMode === "market" ? Object.fromEntries(sortedAisles) : groupedBySection;
 
-  const toggleViewMode = useCallback(() => {
-    haptics.light();
-    setViewMode((prev) => (prev === "recipe" ? "market" : "recipe"));
-  }, []);
+  // const toggleViewMode = useCallback(() => {
+  //   haptics.light();
+  //   setViewMode((prev) => (prev === "recipe" ? "market" : "recipe"));
+  // }, []);
 
   if (loading) {
     return (
@@ -339,10 +333,7 @@ export default function ChecklistScreen() {
                 color={viewMode === "recipe" ? colors.white : colors.textSecondary}
               />
               <Text
-                style={[
-                  styles.viewModeText,
-                  viewMode === "recipe" && styles.viewModeTextActive,
-                ]}
+                style={[styles.viewModeText, viewMode === "recipe" && styles.viewModeTextActive]}
               >
                 Receita
               </Text>
@@ -360,10 +351,7 @@ export default function ChecklistScreen() {
                 color={viewMode === "market" ? colors.white : colors.textSecondary}
               />
               <Text
-                style={[
-                  styles.viewModeText,
-                  viewMode === "market" && styles.viewModeTextActive,
-                ]}
+                style={[styles.viewModeText, viewMode === "market" && styles.viewModeTextActive]}
               >
                 Mercado
               </Text>

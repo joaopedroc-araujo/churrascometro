@@ -763,17 +763,17 @@ export default function ChurrascometroScreen() {
     // Calcular acompanhamentos (para todos) - apenas se habilitado
     const sideItems: CalculatedItem[] = includeSides
       ? SIDE_ITEMS.map((item) => {
-        const quantity =
-          (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
-        const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
-        return {
-          key: item.key,
-          label: item.label,
-          quantity,
-          format: item.format,
-          price,
-        };
-      })
+          const quantity =
+            (item.perAdult * totalAdults + (item.perChild || 0) * children) * multiplier;
+          const price = calculateItemPrice(quantity, item.format, item.pricePerUnit);
+          return {
+            key: item.key,
+            label: item.label,
+            quantity,
+            format: item.format,
+            price,
+          };
+        })
       : [];
 
     // Calcular bebidas
@@ -1100,9 +1100,7 @@ export default function ChurrascometroScreen() {
             activeOpacity={0.8}
           >
             <FontAwesome name="balance-scale" size={18} color={colors.success} />
-            <Text style={styles.priceComparatorText}>
-              Comparar preços entre mercados
-            </Text>
+            <Text style={styles.priceComparatorText}>Comparar preços entre mercados</Text>
             <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
 

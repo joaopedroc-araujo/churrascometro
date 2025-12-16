@@ -118,7 +118,14 @@ export default function ReverseCalculatorScreen() {
         extras: estimatedCost * 0.1, // ~10% em extras
       },
     };
-  }, [budget, includeVegetarians, includeChildren, includeBeer, vegetarianPercent, childrenPercent]);
+  }, [
+    budget,
+    includeVegetarians,
+    includeChildren,
+    includeBeer,
+    vegetarianPercent,
+    childrenPercent,
+  ]);
 
   const handleApplyToCalculator = useCallback(() => {
     if (!result) {
@@ -156,10 +163,7 @@ export default function ReverseCalculatorScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
               <FontAwesome name="arrow-left" size={20} color={colors.text} />
             </TouchableOpacity>
             <View style={styles.headerContent}>
@@ -239,7 +243,9 @@ export default function ReverseCalculatorScreen() {
               {/* Slider para % de vegetarianos */}
               {includeVegetarians && (
                 <View style={styles.sliderContainer}>
-                  <Text style={styles.sliderLabel}>Porcentagem de vegetarianos: {vegetarianPercent}%</Text>
+                  <Text style={styles.sliderLabel}>
+                    Porcentagem de vegetarianos: {vegetarianPercent}%
+                  </Text>
                   <View style={styles.sliderRow}>
                     <TouchableOpacity
                       style={styles.sliderButton}
@@ -251,9 +257,7 @@ export default function ReverseCalculatorScreen() {
                       <FontAwesome name="minus" size={14} color={colors.text} />
                     </TouchableOpacity>
                     <View style={styles.sliderTrack}>
-                      <View
-                        style={[styles.sliderFill, { width: `${vegetarianPercent}%` }]}
-                      />
+                      <View style={[styles.sliderFill, { width: `${vegetarianPercent}%` }]} />
                     </View>
                     <TouchableOpacity
                       style={styles.sliderButton}
@@ -293,7 +297,9 @@ export default function ReverseCalculatorScreen() {
               {/* Slider para % de crianças */}
               {includeChildren && (
                 <View style={styles.sliderContainer}>
-                  <Text style={styles.sliderLabel}>Porcentagem de crianças: {childrenPercent}%</Text>
+                  <Text style={styles.sliderLabel}>
+                    Porcentagem de crianças: {childrenPercent}%
+                  </Text>
                   <View style={styles.sliderRow}>
                     <TouchableOpacity
                       style={styles.sliderButton}
@@ -305,9 +311,7 @@ export default function ReverseCalculatorScreen() {
                       <FontAwesome name="minus" size={14} color={colors.text} />
                     </TouchableOpacity>
                     <View style={styles.sliderTrack}>
-                      <View
-                        style={[styles.sliderFill, { width: `${childrenPercent}%` }]}
-                      />
+                      <View style={[styles.sliderFill, { width: `${childrenPercent}%` }]} />
                     </View>
                     <TouchableOpacity
                       style={styles.sliderButton}
@@ -392,8 +396,8 @@ export default function ReverseCalculatorScreen() {
           <View style={styles.tipCard}>
             <FontAwesome name="lightbulb-o" size={20} color={colors.secondary} />
             <Text style={styles.tipText}>
-              Esses valores são estimativas baseadas nos preços médios configurados no app.
-              Os valores reais podem variar conforme sua região e escolha de carnes.
+              Esses valores são estimativas baseadas nos preços médios configurados no app. Os
+              valores reais podem variar conforme sua região e escolha de carnes.
             </Text>
           </View>
 

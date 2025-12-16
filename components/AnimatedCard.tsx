@@ -156,7 +156,9 @@ export function StaggeredList({ children, staggerDelay = 100 }: StaggeredListPro
   return (
     <>
       {React.Children.map(children, (child, index) => {
-        if (!React.isValidElement(child)) return child;
+        if (!React.isValidElement(child)) {
+          return child;
+        }
         return React.cloneElement(child as React.ReactElement<any>, {
           delay: index * staggerDelay,
         });

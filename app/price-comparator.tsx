@@ -142,16 +142,19 @@ export default function PriceComparatorScreen() {
     setShowEditModal(true);
   }, [newStoreName, stores, calculationItems]);
 
-  const handleEditStore = useCallback((store: Store) => {
-    setSelectedStore(store);
-    const prices: Record<string, string> = {};
-    calculationItems.forEach((item) => {
-      const price = store.prices[item.key] ?? DEFAULT_PRICES[item.key] ?? 0;
-      prices[item.key] = price > 0 ? price.toFixed(2).replace(".", ",") : "";
-    });
-    setEditingPrices(prices);
-    setShowEditModal(true);
-  }, [calculationItems]);
+  const handleEditStore = useCallback(
+    (store: Store) => {
+      setSelectedStore(store);
+      const prices: Record<string, string> = {};
+      calculationItems.forEach((item) => {
+        const price = store.prices[item.key] ?? DEFAULT_PRICES[item.key] ?? 0;
+        prices[item.key] = price > 0 ? price.toFixed(2).replace(".", ",") : "";
+      });
+      setEditingPrices(prices);
+      setShowEditModal(true);
+    },
+    [calculationItems]
+  );
 
   const handleSavePrices = useCallback(async () => {
     if (!selectedStore) {
@@ -311,10 +314,7 @@ export default function PriceComparatorScreen() {
             <Text style={styles.sectionTitle}>
               <FontAwesome name="balance-scale" size={16} /> Comparação
             </Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setShowAddModal(true)}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
               <FontAwesome name="plus" size={14} color={colors.text} />
               <Text style={styles.addButtonText}>Adicionar Mercado</Text>
             </TouchableOpacity>
@@ -323,9 +323,7 @@ export default function PriceComparatorScreen() {
           {stores.length === 0 ? (
             <View style={styles.emptyStores}>
               <FontAwesome name="shopping-basket" size={40} color={colors.textSecondary} />
-              <Text style={styles.emptyStoresText}>
-                Adicione mercados para comparar preços
-              </Text>
+              <Text style={styles.emptyStoresText}>Adicione mercados para comparar preços</Text>
             </View>
           ) : (
             <View style={styles.storesList}>
@@ -446,9 +444,7 @@ export default function PriceComparatorScreen() {
           >
             <View style={styles.editModalContent}>
               <View style={styles.editModalHeader}>
-                <Text style={styles.editModalTitle}>
-                  {selectedStore?.name}
-                </Text>
+                <Text style={styles.editModalTitle}>{selectedStore?.name}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowEditModal(false);
@@ -459,9 +455,7 @@ export default function PriceComparatorScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.editModalSubtitle}>
-                Digite os preços deste mercado:
-              </Text>
+              <Text style={styles.editModalSubtitle}>Digite os preços deste mercado:</Text>
 
               <FlatList
                 data={calculationItems}
