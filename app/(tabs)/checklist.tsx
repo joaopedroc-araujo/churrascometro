@@ -248,9 +248,15 @@ export default function ChecklistScreen() {
   const sortedAisles = Object.entries(groupedByAisle).sort((a, b) => {
     const indexA = AISLE_ORDER.indexOf(a[0]);
     const indexB = AISLE_ORDER.indexOf(b[0]);
-    if (indexA === -1 && indexB === -1) { return 0; }
-    if (indexA === -1) { return 1; }
-    if (indexB === -1) { return -1; }
+    if (indexA === -1 && indexB === -1) {
+      return 0;
+    }
+    if (indexA === -1) {
+      return 1;
+    }
+    if (indexB === -1) {
+      return -1;
+    }
     return indexA - indexB;
   });
 
